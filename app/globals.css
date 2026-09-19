@@ -150,6 +150,14 @@ html.lenis, html.lenis body {
   color: var(--bg);
   box-shadow: 0 14px 30px rgba(20, 18, 16, 0.22);
 }
+.rail-dark .rail-tile {
+  background: rgba(251, 249, 239, 0.08);
+  color: rgba(251, 249, 239, 0.62);
+}
+.rail-dark .rail-tile.rail-active {
+  background: #fbf9ef;
+  color: var(--ink);
+}
 .rail-tile:focus-visible {
   outline: 2.5px solid var(--accent);
   outline-offset: 3px;

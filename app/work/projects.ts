@@ -1,0 +1,71 @@
+// Every project shown in Featured Work, the sidebar Work panel and /work/[slug].
+export const WORK = [
+  {
+    tag: "EdTech · SaaS", year: "2025",
+    name: "Bidyaloy",
+    slug: "bidyaloy",
+    title: "Bidyaloy.academy — School Management & LMS",
+    desc: "A subscription-based school management platform with dedicated teacher, student, and guardian panels — handling attendance, results, and full academic administration end-to-end.",
+    color: "from-[#0a90d8]/30 to-[#012a5e]/60",
+    video: "/bidyaloy/bidyaloy.mp4",
+    poster: "/bidyaloy/bidyaloy-poster.jpg",
+  },
+  {
+    tag: "Mobile App", year: "2025",
+    name: "Bidyaloy App",
+    slug: "bidyaloy-app",
+    title: "Bidyaloy.academy — iOS & Android App",
+    desc: "The mobile companion to the Bidyaloy.academy platform, putting attendance, results, and guardian communication in every parent and teacher's pocket.",
+    color: "from-[#40d8ff]/20 to-[#011830]/60",
+  },
+  {
+    tag: "Mobile App", year: "2025",
+    name: "Health App",
+    slug: "health-app",
+    title: "Health & Wellness App — iOS & Android",
+    desc: "A cross-platform health and wellness app for iOS and Android, helping users track and manage their day-to-day health.",
+    color: "from-[#00c0ff]/20 to-[#012a5e]/60",
+  },
+  {
+    tag: "ERP · Enterprise", year: "2025",
+    name: "Business ERP",
+    slug: "business-erp",
+    title: "Business ERP — One System for Every Department",
+    desc: "A modular ERP connecting HR & payroll, accounting, inventory, sales and purchase on one database — with a live management dashboard and role-based access for every branch.",
+    color: "from-[#c2641f]/40 to-[#2a1206]/70",
+  },
+  {
+    tag: "CRM", year: "2025",
+    name: "Sales CRM",
+    slug: "sales-crm",
+    title: "Sales CRM — From Lead to Closed Deal",
+    desc: "Lead capture, sales pipeline, follow-up reminders and customer communication in one place, with a sales dashboard that measures performance instead of estimating it.",
+    color: "from-[#0b4a42]/40 to-[#05221d]/70",
+  },
+  {
+    tag: "Automation · n8n", year: "2025",
+    name: "n8n Flows",
+    slug: "n8n-flows",
+    title: "n8n Workflow Automation",
+    desc: "Self-hosted n8n workflows connecting forms, CRM, email, WhatsApp and spreadsheets — so leads, invoices and notifications move between tools without manual copy-paste.",
+    color: "from-[#ea4b71]/30 to-[#1a0d1f]/70",
+  },
+  {
+    tag: "CRM · Enterprise", year: "2025",
+    name: "Enterprise CRM",
+    slug: "enterprise-crm",
+    title: "Enterprise CRM — Multi-Branch Customer Platform",
+    desc: "Customer management, support tickets, marketing automation and customer communication across every branch — with role-based access and reporting that rolls up to head office.",
+    color: "from-[#3a2a5e]/60 to-[#120a24]/80",
+  },
+  {
+    tag: "Agentic AI", year: "2025",
+    name: "Agentic AI",
+    slug: "agentic-ai",
+    title: "Agentic AI — Autonomous Business Agents",
+    desc: "AI agents that plan and carry out multi-step work across your systems — reading requests, querying ERP and CRM data, drafting replies and updating records, with a human approval step before anything goes out.",
+    color: "from-[#7c5cff]/30 to-[#0b0716]/80",
+  },
+];
+
+export type Project = (typeof WORK)[number];

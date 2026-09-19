@@ -1,46 +1,17 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import HeroCarousel from "./HeroCarousel";
 import ShipDeck from "./ShipDeck";
 import WorkRing from "./WorkRing";
-import MobileNav from "./MobileNav";
+import SiteChrome, { SERVICE_MEGA } from "./SiteChrome";
+import AutoVideo from "./AutoVideo";
+import { WORK } from "./work/projects";
+import CaseLabel from "./work/CaseLabel";
 
 /* ─── DATA ─── */
-const WORK = [
-  {
-    tag: "EdTech · SaaS", year: "2025",
-    title: "Bidyaloy.academy — School Management & LMS",
-    desc: "A subscription-based school management platform with dedicated teacher, student, and guardian panels — handling attendance, results, and full academic administration end-to-end.",
-    color: "from-[#0a90d8]/30 to-[#012a5e]/60",
-  },
-  {
-    tag: "Web Design", year: "2025",
-    title: "Mir Heating & Plumbing — Business Website",
-    desc: "A clean, conversion-focused website for a heating and plumbing service business, built to turn visitors into booked jobs.",
-    color: "from-[#00c0ff]/25 to-[#01204a]/60",
-  },
-  {
-    tag: "Mobile App", year: "2025",
-    title: "Bidyaloy.academy — iOS & Android App",
-    desc: "The mobile companion to the Bidyaloy.academy platform, putting attendance, results, and guardian communication in every parent and teacher's pocket.",
-    color: "from-[#40d8ff]/20 to-[#011830]/60",
-  },
-  {
-    tag: "Web Design", year: "2025",
-    title: "PressCustoms Consulting — Business Website",
-    desc: "A professional website for a customs consulting firm, presenting their services and expertise to prospective clients.",
-    color: "from-[#0a90d8]/25 to-[#011830]/60",
-  },
-  {
-    tag: "Mobile App", year: "2025",
-    title: "Health & Wellness App — iOS & Android",
-    desc: "A cross-platform health and wellness app for iOS and Android, helping users track and manage their day-to-day health.",
-    color: "from-[#00c0ff]/20 to-[#012a5e]/60",
-  },
-];
-
 const TESTIMONIALS = [
   {
     quote: "Three Plug automated processes we thought were impossible to automate. The ROI was visible within the first month.",
@@ -91,21 +62,6 @@ function useReveal(threshold = 0.15) {
   return [ref, vis] as const;
 }
 
-/* ─── SCROLL PROGRESS HOOK ─── */
-function useScrollProgress() {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const el = document.documentElement;
-      const total = el.scrollHeight - el.clientHeight;
-      setProgress(total > 0 ? window.scrollY / total : 0);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return progress;
-}
-
 /* ─── PARALLAX HOOK ─── */
 function useParallax(speed = 0.3) {
   const ref = useRef<HTMLDivElement>(null);
@@ -123,435 +79,6 @@ function useParallax(speed = 0.3) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [speed]);
   return ref;
-}
-
-/* ─── RAIL / MENU ICONS ─── */
-function RailGlyph({ name }: { name: "bag" | "building" | "target" | "smiley" | "docs" | "mail" }) {
-  const p = { width: 23, height: 23, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  switch (name) {
-    case "bag":      return <svg {...p}><path d="M6 8h12l-1 12H7L6 8Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>;
-    case "building": return <svg {...p}><rect x="5" y="3" width="14" height="18" rx="1" /><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1" /></svg>;
-    case "target":   return <svg {...p}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>;
-    case "smiley":   return <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2" /><path d="M9 10h.01M15 10h.01" /></svg>;
-    case "docs":     return <svg {...p}><rect x="4" y="4" width="12" height="16" rx="1.2" /><path d="M8 8h4M8 11.5h4M8 15h2" /></svg>;
-    case "mail":     return <svg {...p}><rect x="3.5" y="5.5" width="17" height="13" rx="1.5" /><path d="M4 6.5 12 13l8-6.5" /></svg>;
-  }
-}
-
-const CHROME_LINKS: { id: string; label: string; icon: "bag" | "building" | "target" | "smiley" | "docs" | "mail" }[] = [
-  { id: "services", label: "Services", icon: "bag" },
-  { id: "process",  label: "Process",  icon: "building" },
-  { id: "why",      label: "Why us",   icon: "target" },
-  { id: "about",    label: "About us", icon: "smiley" },
-  { id: "work",     label: "Work",     icon: "docs" },
-  { id: "contact",  label: "Contact",  icon: "mail" },
-];
-
-/* ─── TOP BAR: logo + book-a-call pill ─── */
-function TopBar() {
-  return (
-    <>
-      <a href="#top" className="fixed top-6 left-6 z-[998] flex items-center">
-        <Image src="/logoh.png" alt="Three Plug — Software Solutions" width={377} height={251} priority className="h-16 w-auto drop-shadow-[0_2px_10px_rgba(20,18,16,0.12)]" />
-      </a>
-      <a href="#contact"
-        className="fixed top-6 right-6 z-[998] rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-wide transition-transform hover:scale-105"
-        style={{ background: "var(--ink)", color: "var(--bg)" }}>
-        Book a call now
-      </a>
-    </>
-  );
-}
-
-/* ─── SERVICES MEGA-MENU DATA ─── */
-const SERVICE_MEGA = [
-  { label: "Website Development", gradient: "linear-gradient(160deg, #cdeeff, var(--brand-light) 55%, var(--brand-deep))" },
-  { label: "Web Applications",    gradient: "linear-gradient(160deg, var(--brand-light), var(--brand-deep))" },
-  { label: "Mobile Applications", gradient: "linear-gradient(160deg, #0b4a42, #05221d)" },
-  { label: "Desktop Software",    gradient: "linear-gradient(160deg, #3a332e, var(--ink))" },
-  { label: "ERP Solutions",       gradient: "linear-gradient(160deg, #5a2a0f, #2a1206)" },
-  { label: "CRM Solutions",       gradient: "linear-gradient(160deg, #4a1f42, #24101f)" },
-  { label: "Digital Marketing",   gradient: "linear-gradient(160deg, #3a2a5e, #1a1230)" },
-  { label: "Animation & Motion",  gradient: "linear-gradient(160deg, #5c1d2b, #2b0d14)" },
-  { label: "Character Animation", gradient: "linear-gradient(160deg, var(--grey), var(--ink))" },
-  { label: "3D Web Experience",   gradient: "radial-gradient(120% 120% at 30% 80%, var(--brand-sky), var(--brand-mid) 60%, var(--ink))" },
-  { label: "3D Visualisation",    gradient: "linear-gradient(160deg, #07445c, #03202b)" },
-  { label: "DevOps & Cloud",      gradient: "linear-gradient(160deg, #143a2a, #08190f)" },
-];
-
-/* ─── LEFT ICON RAIL — dock-style pointer magnetism ─── */
-const RAIL_BASE = 68;
-const RAIL_PEAK = 92;
-const RAIL_SPREAD = 76;
-const RAIL_GAP = 14;
-const RAIL_RADIUS_RATIO = 0.32;
-const RAIL_ICON_PEAK_SCALE = 1.25;
-const RAIL_LEFT = 24; // matches left-6
-const SERVICES_INDEX = CHROME_LINKS.findIndex((l) => l.id === "services");
-
-function IconRail() {
-  const dockRef = useRef<HTMLDivElement>(null);
-  const tileRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const iconRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const pillRef = useRef<HTMLDivElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
-
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const activeIndexRef = useRef(-1);
-  const restCenters = useRef<number[]>([]);
-  const pointerActive = useRef(false);
-  const pointerY = useRef(0);
-  const rafId = useRef<number | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const measure = () => {
-      const rect = dockRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      restCenters.current = CHROME_LINKS.map((_, i) => rect.top + i * (RAIL_BASE + RAIL_GAP) + RAIL_BASE / 2);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
-
-  const gauss = (dist: number, base: number, peak: number) => base + (peak - base) * Math.exp(-((dist / RAIL_SPREAD) ** 2));
-
-  const applySizes = (distFn: (i: number) => number) => {
-    let bestIdx = -1;
-    let bestAbs = Infinity;
-    CHROME_LINKS.forEach((_, i) => {
-      const dist = distFn(i);
-      const abs = Math.abs(dist);
-      const size = gauss(dist, RAIL_BASE, RAIL_PEAK);
-      const tile = tileRefs.current[i];
-      if (tile) {
-        tile.style.width = `${size}px`;
-        tile.style.height = `${size}px`;
-        tile.style.borderRadius = `${size * RAIL_RADIUS_RATIO}px`;
-      }
-      const icon = iconRefs.current[i];
-      if (icon) icon.style.transform = `scale(${gauss(dist, 1, RAIL_ICON_PEAK_SCALE)})`;
-      if (abs < bestAbs) { bestAbs = abs; bestIdx = i; }
-    });
-    return bestAbs < RAIL_SPREAD * 1.15 ? bestIdx : -1;
-  };
-
-  const resetSizes = () => {
-    CHROME_LINKS.forEach((_, i) => {
-      const tile = tileRefs.current[i];
-      if (tile) { tile.style.width = ""; tile.style.height = ""; tile.style.borderRadius = ""; }
-      const icon = iconRefs.current[i];
-      if (icon) icon.style.transform = "scale(1)";
-    });
-  };
-
-  const positionFlyout = (idx: number) => {
-    const tile = tileRefs.current[idx];
-    if (!tile) return;
-    const centerY = tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2;
-    if (idx === SERVICES_INDEX) {
-      if (drawerRef.current) drawerRef.current.style.top = `${Math.max(16, Math.min(centerY - 341, window.innerHeight - 698))}px`;
-    } else if (pillRef.current) {
-      pillRef.current.style.top = `${centerY}px`;
-    }
-  };
-
-  const setActive = (idx: number) => {
-    if (idx === activeIndexRef.current) {
-      if (idx !== -1) positionFlyout(idx);
-      return;
-    }
-    activeIndexRef.current = idx;
-    setActiveIndex(idx);
-    CHROME_LINKS.forEach((_, i) => tileRefs.current[i]?.classList.toggle("rail-active", i === idx));
-    if (idx !== -1) positionFlyout(idx);
-  };
-
-  const frame = () => {
-    if (pointerActive.current) {
-      const idx = applySizes((i) => pointerY.current - restCenters.current[i]);
-      setActive(idx);
-      rafId.current = requestAnimationFrame(frame);
-    } else {
-      rafId.current = null;
-    }
-  };
-
-  const cancelClose = () => {
-    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
-  };
-  const scheduleClose = () => {
-    closeTimer.current = setTimeout(() => {
-      dockRef.current?.classList.add("rail-settle");
-      resetSizes();
-      setActive(-1);
-    }, 180);
-  };
-
-  const handleDockEnter = () => {
-    if (reducedMotion.current) return;
-    cancelClose();
-    pointerActive.current = true;
-    dockRef.current?.classList.remove("rail-settle");
-    if (!rafId.current) rafId.current = requestAnimationFrame(frame);
-  };
-  const handleDockMove = (e: React.PointerEvent) => {
-    pointerY.current = e.clientY;
-  };
-  const handleDockLeave = () => {
-    pointerActive.current = false;
-    scheduleClose();
-  };
-  const handleFlyoutEnter = () => cancelClose();
-  const handleFlyoutLeave = () => scheduleClose();
-
-  const handleFocus = (i: number) => {
-    cancelClose();
-    if (pointerActive.current || reducedMotion.current) { setActive(i); return; }
-    dockRef.current?.classList.add("rail-settle");
-    applySizes((k) => (k - i) * (RAIL_BASE + RAIL_GAP));
-    setActive(i);
-  };
-  const handleBlur = (e: React.FocusEvent) => {
-    if (pointerActive.current) return;
-    const next = e.relatedTarget as Node | null;
-    if (next && (drawerRef.current?.contains(next) || pillRef.current?.contains(next))) return;
-    dockRef.current?.classList.add("rail-settle");
-    resetSizes();
-    setActive(-1);
-  };
-
-  return (
-    <>
-    <div className="fixed left-6 top-1/2 z-[998] hidden -translate-y-1/2 flex-col md:flex">
-      <div
-        ref={dockRef}
-        className="rail-dock flex flex-col items-center"
-        style={{ gap: RAIL_GAP, height: CHROME_LINKS.length * RAIL_BASE + (CHROME_LINKS.length - 1) * RAIL_GAP }}
-        onPointerEnter={handleDockEnter}
-        onPointerMove={handleDockMove}
-        onPointerLeave={handleDockLeave}
-      >
-        {CHROME_LINKS.map((l, i) => (
-          <a
-            key={l.id}
-            href={`#${l.id}`}
-            ref={(el) => { tileRefs.current[i] = el; }}
-            onFocus={() => handleFocus(i)}
-            onBlur={handleBlur}
-            aria-haspopup="true"
-            aria-expanded={activeIndex === i}
-            className="rail-tile flex flex-shrink-0 items-center justify-center"
-          >
-            <span ref={(el) => { iconRefs.current[i] = el; }} className="rail-icon-wrap">
-              <RailGlyph name={l.icon} />
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
-
-      {/* Label pill — follows any non-Services tile */}
-      <div
-        ref={pillRef}
-        onPointerEnter={handleFlyoutEnter}
-        onPointerLeave={handleFlyoutLeave}
-        className="pointer-events-none fixed z-[998] -translate-y-1/2 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wide"
-        style={{
-          left: RAIL_LEFT + RAIL_PEAK + 14,
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 8px 20px rgba(20,18,16,0.12)",
-          color: "var(--ink)",
-          opacity: activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? 1 : 0,
-          transform: `translateY(-50%) translateX(${activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? 0 : -6}px)`,
-          transition: "opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out)",
-          pointerEvents: activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? "auto" : "none",
-        }}
-      >
-        {activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? CHROME_LINKS[activeIndex].label : ""}
-      </div>
-
-      {/* Services mega-panel — follows the Services tile. Frosted-glass panel
-          over a photo-card grid, bottom-left overlaid title, matching the
-          Brand Appart reference. */}
-      <div
-        ref={drawerRef}
-        onPointerEnter={handleFlyoutEnter}
-        onPointerLeave={handleFlyoutLeave}
-        className="fixed z-[998] w-[560px] rounded-3xl p-6"
-        style={{
-          left: RAIL_LEFT + RAIL_PEAK + 14,
-          background: "rgba(142,130,124,0.72)",
-          backdropFilter: "blur(28px)",
-          WebkitBackdropFilter: "blur(28px)",
-          color: "var(--bg)",
-          opacity: activeIndex === SERVICES_INDEX ? 1 : 0,
-          transform: activeIndex === SERVICES_INDEX ? "scale(1)" : "scale(0.97) translateX(-8px)",
-          transformOrigin: "left center",
-          pointerEvents: activeIndex === SERVICES_INDEX ? "auto" : "none",
-          transition: `opacity var(--dur-slow) var(--ease-flyout), transform var(--dur-slow) var(--ease-flyout)`,
-          boxShadow: "0 24px 60px rgba(0,0,0,0.25)",
-        }}
-      >
-        <div className="mb-5 text-center font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "rgba(251,249,239,0.75)" }}>
-          Services
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {SERVICE_MEGA.map((s, i) => {
-            const open = activeIndex === SERVICES_INDEX;
-            return (
-              <a key={s.label} href="#services"
-                className="relative overflow-hidden rounded-2xl hover:scale-[1.03]"
-                style={{
-                  aspectRatio: "6 / 5",
-                  background: s.gradient,
-                  opacity: open ? 1 : 0,
-                  transform: open ? "translateY(0)" : "translateY(6px)",
-                  transition: `opacity 0.35s ${open ? i * 30 : 0}ms, transform 0.35s ${open ? i * 30 : 0}ms`,
-                }}>
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent 55%)" }} />
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 text-[10.5px] font-bold uppercase leading-tight tracking-wide text-white">{s.label}</div>
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── MENU FLYOUT ─── */
-function MenuFlyout() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label={open ? "Close menu" : "Open menu"}
-        className="fixed bottom-6 left-6 z-[999] flex flex-col items-start gap-2"
-        style={{ color: "var(--ink)" }}
-      >
-        <span className="relative block h-[11px] w-[52px] overflow-hidden text-[11px] font-black uppercase tracking-[0.15em]">
-          <span
-            className="absolute inset-0 transition-all duration-300 ease-out"
-            style={{ opacity: open ? 0 : 1, transform: open ? "translateY(-10px)" : "translateY(0)" }}
-          >
-            Menu
-          </span>
-          <span
-            className="absolute inset-0 transition-all duration-300 ease-out"
-            style={{ opacity: open ? 1 : 0, transform: open ? "translateY(0)" : "translateY(10px)" }}
-          >
-            Close
-          </span>
-        </span>
-        <span className="flex items-center gap-[5px]">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="rounded-full transition-transform duration-300 ease-out"
-              style={{
-                width: 3.5, height: 3.5, background: "currentColor",
-                transitionDelay: `${i * 45}ms`,
-                transform: open ? "scale(1.7)" : "scale(1)",
-              }}
-            />
-          ))}
-        </span>
-      </button>
-
-      <div className="fixed inset-0 z-[996]" style={{ pointerEvents: open ? "auto" : "none" }}>
-        <div onClick={() => setOpen(false)} className="absolute inset-0" />
-        <div
-          className="menu-panel absolute left-6 right-6 top-24 bottom-24 overflow-y-auto rounded-[28px] md:left-[132px] md:right-6 md:top-[104px] md:bottom-7 md:rounded-[36px]"
-          style={{
-            maxWidth: 620,
-            background: "var(--ink)",
-            color: "var(--bg)",
-            transformOrigin: "left center",
-            transform: open ? "translateX(0) scale(1)" : "translateX(-16px) scale(0.97)",
-            opacity: open ? 1 : 0,
-            pointerEvents: open ? "auto" : "none",
-            transition: `transform var(--dur-slow) var(--ease-flyout), opacity var(--dur-slow) var(--ease-flyout)`,
-            boxShadow: "0 32px 80px rgba(0,0,0,0.35)",
-            padding: "52px 52px 40px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <nav className="flex flex-col gap-0.5 font-display font-bold" style={{ fontSize: "clamp(2rem, 4.2vw, 3.4rem)", lineHeight: 1.08 }}>
-            {CHROME_LINKS.map((l, i) => (
-              <a key={l.id} href={`#${l.id}`} onClick={() => setOpen(false)}
-                className="menu-link"
-                style={{
-                  transform: open ? "translateY(0)" : "translateY(14px)",
-                  opacity: open ? 1 : 0,
-                  transition: `transform 0.55s ${open ? i * 0.05 : 0}s var(--ease-out), opacity 0.55s ${open ? i * 0.05 : 0}s var(--ease-out)`,
-                }}>
-                {l.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="mt-10 flex flex-col gap-2.5 font-mono text-xs uppercase tracking-widest" style={{ color: "rgba(251,249,239,0.4)" }}>
-            <a href="#" className="w-fit transition-colors hover:opacity-70">Privacy Policy</a>
-            <a href="#" className="w-fit transition-colors hover:opacity-70">Terms of Service</a>
-          </div>
-
-          <div className="mt-auto flex gap-2.5 pt-10">
-            {["in", "x", "gh", "bh"].map((s) => (
-              <a key={s} href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-lg font-mono text-[10px] font-bold uppercase transition-all hover:scale-110"
-                style={{ border: "1px solid rgba(251,249,239,0.18)", color: "rgba(251,249,239,0.6)" }}>
-                {s}
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── RIGHT-EDGE SCROLL PROGRESS LINE ─── */
-function ScrollProgressLine() {
-  const progress = useScrollProgress();
-  return (
-    <div className="fixed right-6 top-1/2 z-[998] hidden -translate-y-1/2 xl:block" style={{ height: 170, width: 1 }}>
-      <div className="h-full w-full" style={{ background: "rgba(142,130,124,0.35)" }} />
-      <div style={{
-        position: "absolute", left: "50%", top: `${progress * 100}%`,
-        width: 8, height: 8, borderRadius: "50%",
-        background: "var(--accent)", boxShadow: "0 0 10px var(--accent)",
-        transform: "translate(-50%, -50%)",
-        transition: "top 0.05s linear",
-      }} />
-    </div>
-  );
-}
-
-/* ─── LIVE CLOCK + LOCATION ─── */
-function LiveClock() {
-  const [time, setTime] = useState<string | null>(null);
-  useEffect(() => {
-    const update = () => setTime(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
-    update();
-    const t = setInterval(update, 30000);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="fixed bottom-6 right-6 z-[998] hidden rounded-full px-4 py-2.5 text-right font-mono text-[10px] uppercase tracking-widest sm:block"
-      style={{ color: "var(--grey)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)", boxShadow: "0 8px 24px rgba(20,18,16,0.08)" }}>
-      Remote-first <span style={{ color: "var(--ink)", fontWeight: 600 }}>{time ?? "--:--"}</span>
-    </div>
-  );
 }
 
 /* ─── SECTION DIVIDER — animated data stream ─── */
@@ -589,12 +116,7 @@ function StreamDivider({ color1 = "#0a90d8", color2 = "#40d8ff" }: { color1?: st
 export default function Home() {
   return (
     <div className="relative min-h-screen text-[#141210] antialiased" style={{ background: "transparent" }}>
-      <TopBar />
-      <IconRail />
-      <MobileNav />
-      <MenuFlyout />
-      <ScrollProgressLine />
-      <LiveClock />
+      <SiteChrome />
 
       {/* Subtle grid overlay */}
       <div className="pointer-events-none fixed inset-0 z-0" style={{
@@ -645,8 +167,9 @@ function Hero() {
     return () => clearTimeout(t);
   }, []);
 
-  const clientNames = ["MERIDIAN", "LUMINARY", "NORDRETAIL", "AUTOFLOW", "GROWTHOS", "ARCHVIZ"];
-  const marqueeRow = [...clientNames, ...clientNames];
+  const clientNames = ["BIDYALOY.ACADEMY", "CHORKI", "BALUCHOR", "GRAVIA GLASS"];
+  // 4 copies (2 per half) so each half is wider than the container and the -50% loop never shows a gap.
+  const marqueeRow = [...clientNames, ...clientNames, ...clientNames, ...clientNames];
 
   return (
     <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-24 pb-16">
@@ -680,9 +203,9 @@ function Hero() {
         </h1>
 
         <div className="mt-14 overflow-hidden" style={{ animation: mounted ? "fadeUp 1s 0.35s both" : "none" }}>
-          <div className="flex w-max animate-[marquee_28s_linear_infinite] items-center gap-16">
+          <div className="flex w-max animate-[marquee_28s_linear_infinite] items-center">
             {marqueeRow.map((name, i) => (
-              <span key={i} className="text-sm font-bold uppercase tracking-wider" style={{ color: "rgba(20,18,16,0.32)" }}>
+              <span key={i} className="pr-16 text-sm font-bold uppercase tracking-wider" style={{ color: "rgba(20,18,16,0.32)" }}>
                 {name}
               </span>
             ))}
@@ -867,15 +390,28 @@ function FeaturedWork() {
 
       <div className="mx-auto mt-20 max-w-7xl px-6 md:pl-24">
         <div className="flex flex-col gap-5">
-          <FullWorkCard work={WORK[0]} tag="EdTech · SaaS" />
+          <FullWorkCard work={WORK[0]} />
           <div className="grid gap-5 md:grid-cols-2">
-            <IllustratedWorkCard title="Mir Heating & Plumbing" subtitle="Business website" hues={["#0a90d8", "#40d8ff", "#012a5e"]} />
-            <WordmarkWorkCard title="Bidyaloy.academy" tag="Mobile App · iOS & Android" bg="linear-gradient(160deg, #0b2e5c, #011830)" />
+            <WordmarkWorkCard work={WORK[1]} title="Bidyaloy.academy" bg="linear-gradient(160deg, #0b2e5c, #011830)" />
+            <IllustratedWorkCard work={WORK[4]} title="Sales CRM" subtitle="Lead to closed deal" hues={["#0b4a42", "#40d8ff", "#0a90d8"]} bg="linear-gradient(160deg, #effaf5, #d5eee3)" />
           </div>
+          <FullWorkCard work={WORK[3]} />
           <div className="grid gap-5 md:grid-cols-2">
-            <IllustratedWorkCard title="PressCustoms Consulting" subtitle="Business website" hues={["#40d8ff", "#7dd6ff", "#0a2a54"]} bg="linear-gradient(160deg, #eef6fc, #dbe9f5)" />
-            <WordmarkWorkCard title="Health & Wellness App" tag="Mobile App · iOS & Android" bg="linear-gradient(160deg, #0b4a42, #05221d)" />
+            <FlowWorkCard work={WORK[5]} nodes={["Form", "Filter", "CRM", "WhatsApp"]} />
+            <WordmarkWorkCard work={WORK[2]} title="Health & Wellness App" bg="linear-gradient(160deg, #0b4a42, #05221d)" />
           </div>
+          <FullWorkCard work={WORK[6]} />
+          <AgentWorkCard
+            work={WORK[7]}
+            task="chase overdue invoices"
+            steps={[
+              { label: "Read request from inbox", done: true },
+              { label: "Query ERP for overdue invoices", done: true },
+              { label: "Draft personalised reminders", done: true },
+              { label: "Log follow-ups in CRM", done: true },
+              { label: "Waiting for human approval", done: false },
+            ]}
+          />
         </div>
       </div>
 
@@ -910,7 +446,7 @@ function FeaturedWork() {
   );
 }
 
-function FullWorkCard({ work: w, tag }: { work: typeof WORK[number]; tag: string }) {
+function FullWorkCard({ work: w }: { work: typeof WORK[number] }) {
   const [ref, vis] = useReveal(0.15);
   return (
     <div
@@ -918,24 +454,26 @@ function FullWorkCard({ work: w, tag }: { work: typeof WORK[number]; tag: string
       className={`relative overflow-hidden rounded-3xl bg-[#141210] bg-gradient-to-br ${w.color} p-10 md:p-14`}
       style={{
         minHeight: 340,
+        aspectRatio: w.video ? "1280 / 672" : undefined,
         opacity: vis ? 1 : 0,
         transform: vis ? "none" : "translateY(28px)",
         transition: "opacity 0.8s, transform 0.8s cubic-bezier(0.22,1,0.36,1)",
       }}
     >
-      <div className="absolute left-8 top-8 md:left-10 md:top-10 inline-block rounded-lg px-3 py-1.5" style={{ background: "rgba(20,18,16,0.5)", backdropFilter: "blur(8px)" }}>
-        <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/60">{w.year}</div>
-        <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-white/60">{tag}</div>
-      </div>
-      <div className="absolute bottom-8 left-8 right-8 md:bottom-10 md:left-10 md:right-10">
-        <div className="max-w-xl font-display font-bold text-white" style={{ fontSize: "clamp(1.5rem,3.2vw,2.75rem)" }}>{w.title}</div>
-        <p className="mt-3 max-w-md text-sm leading-relaxed text-white/60">{w.desc}</p>
-      </div>
+      {w.video && w.poster ? (
+        <AutoVideo src={w.video} poster={w.poster} className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <div className="absolute bottom-8 left-8 right-8 md:bottom-10 md:left-10 md:right-10">
+          <div className="max-w-xl font-display font-bold text-white" style={{ fontSize: "clamp(1.5rem,3.2vw,2.75rem)" }}>{w.title}</div>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-white/60">{w.desc}</p>
+        </div>
+      )}
+      <CaseLabel work={w} />
     </div>
   );
 }
 
-function IllustratedWorkCard({ title, subtitle, hues, bg = "linear-gradient(160deg, #fbf9ef, #f2f0e7)" }: { title: string; subtitle: string; hues: [string, string, string]; bg?: string }) {
+function IllustratedWorkCard({ work, title, subtitle, hues, bg = "linear-gradient(160deg, #fbf9ef, #f2f0e7)" }: { work: typeof WORK[number]; title: string; subtitle: string; hues: [string, string, string]; bg?: string }) {
   const [ref, vis] = useReveal(0.15);
   return (
     <div
@@ -952,6 +490,7 @@ function IllustratedWorkCard({ title, subtitle, hues, bg = "linear-gradient(160d
       <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40" style={{ background: hues[0], opacity: 0.85, borderRadius: "40% 60% 55% 45%", transform: "rotate(12deg)" }} />
       <div className="pointer-events-none absolute right-16 top-24 h-16 w-16 rounded-full" style={{ background: hues[1], opacity: 0.9 }} />
       <div className="pointer-events-none absolute -left-10 bottom-10 h-32 w-32" style={{ background: hues[2], opacity: 0.7, borderRadius: "55% 45% 60% 40%" }} />
+      <CaseLabel work={work} />
       <div className="relative">
         <div className="font-display text-3xl font-black tracking-tight" style={{ color: "#141210" }}>{title}</div>
         <div className="mt-1 font-mono text-[11px] uppercase tracking-widest" style={{ color: "rgba(20,18,16,0.4)" }}>{subtitle}</div>
@@ -960,12 +499,84 @@ function IllustratedWorkCard({ title, subtitle, hues, bg = "linear-gradient(160d
   );
 }
 
-function WordmarkWorkCard({ title, tag, bg = "#141210" }: { title: string; tag: string; bg?: string }) {
+function FlowWorkCard({ work: w, nodes }: { work: typeof WORK[number]; nodes: string[] }) {
   const [ref, vis] = useReveal(0.15);
   return (
     <div
       ref={ref}
-      className="group relative flex min-h-[320px] flex-col justify-between overflow-hidden rounded-3xl p-9"
+      className="relative flex min-h-[320px] flex-col justify-between overflow-hidden rounded-3xl px-9 pb-9 pt-36"
+      style={{
+        background: "linear-gradient(160deg, #24132d, #0d0712)",
+        opacity: vis ? 1 : 0,
+        transform: vis ? "none" : "translateY(28px)",
+        transition: "opacity 0.8s 0.1s, transform 0.8s 0.1s cubic-bezier(0.22,1,0.36,1)",
+      }}
+    >
+      <CaseLabel work={w} />
+      <div className="flex items-center justify-center py-6">
+        {nodes.map((n, i) => (
+          <div key={n} className="flex items-center">
+            {i > 0 && <div className="h-px w-4 sm:w-7" style={{ background: "linear-gradient(90deg, rgba(234,75,113,0.25), #ea4b71)" }} />}
+            <div className="rounded-xl px-2.5 py-2 text-[10px] font-semibold text-white" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(234,75,113,0.45)" }}>
+              {n}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="font-display text-2xl font-black tracking-tight text-white">{w.title}</div>
+        <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/55">{w.desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function AgentWorkCard({ work: w, task, steps }: { work: typeof WORK[number]; task: string; steps: { label: string; done: boolean }[] }) {
+  const [ref, vis] = useReveal(0.15);
+  return (
+    <div
+      ref={ref}
+      className="relative grid gap-8 overflow-hidden rounded-3xl px-10 pb-10 pt-36 md:grid-cols-2 md:items-center md:px-14 md:pb-14"
+      style={{
+        minHeight: 340,
+        background: "radial-gradient(120% 90% at 85% 15%, rgba(124,92,255,0.3), transparent 60%), linear-gradient(160deg, #150f26, #07050d)",
+        opacity: vis ? 1 : 0,
+        transform: vis ? "none" : "translateY(28px)",
+        transition: "opacity 0.8s, transform 0.8s cubic-bezier(0.22,1,0.36,1)",
+      }}
+    >
+      <CaseLabel work={w} />
+      <div>
+        <div className="max-w-xl font-display font-bold text-white" style={{ fontSize: "clamp(1.5rem,3.2vw,2.75rem)" }}>{w.title}</div>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-white/60">{w.desc}</p>
+      </div>
+      <div className="rounded-2xl p-5 font-mono text-[12px]" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(124,92,255,0.35)" }}>
+        <div className="mb-3 text-white/40">agent.run(&quot;{task}&quot;)</div>
+        {steps.map((s, i) => (
+          <div
+            key={s.label}
+            className="flex items-center gap-2.5 py-1"
+            style={{
+              color: s.done ? "rgba(255,255,255,0.82)" : "#b9a8ff",
+              opacity: vis ? 1 : 0,
+              transition: `opacity 0.5s ${0.3 + i * 0.25}s`,
+            }}
+          >
+            <span className="w-3 text-center">{s.done ? "✓" : "…"}</span>
+            {s.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WordmarkWorkCard({ work, title, bg = "#141210" }: { work: typeof WORK[number]; title: string; bg?: string }) {
+  const [ref, vis] = useReveal(0.15);
+  return (
+    <div
+      ref={ref}
+      className="relative flex min-h-[320px] flex-col overflow-hidden rounded-3xl px-9 pb-9 pt-24"
       style={{
         background: bg,
         opacity: vis ? 1 : 0,
@@ -973,14 +584,10 @@ function WordmarkWorkCard({ title, tag, bg = "#141210" }: { title: string; tag: 
         transition: "opacity 0.8s, transform 0.8s cubic-bezier(0.22,1,0.36,1)",
       }}
     >
-      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">{tag}</div>
+      <CaseLabel work={work} />
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center font-display font-black leading-none tracking-tight text-white" style={{ fontSize: "clamp(1.75rem,3.5vw,3rem)" }}>{title}</div>
       </div>
-      <a href="#contact" className="flex items-center gap-2 self-end font-mono text-[11px] uppercase tracking-widest text-white/50 transition-colors group-hover:text-white">
-        Discover case
-        <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
-      </a>
     </div>
   );
 }
@@ -1259,7 +866,7 @@ function Footer() {
   }, []);
 
   return (
-    <footer id="contact" className="relative z-10 mt-6 overflow-hidden px-6 md:pl-24" style={{ background: "var(--ink)" }}>
+    <footer id="contact" data-theme="dark" className="relative z-10 mt-6 overflow-hidden px-6 md:pl-24" style={{ background: "var(--ink)" }}>
       {/* Ambient glows + faint dot grid, echoing the rest of the site */}
       <div className="pointer-events-none absolute -top-24 left-1/4 h-[420px] w-[420px] rounded-full opacity-[0.16]"
         style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)", filter: "blur(60px)" }} />

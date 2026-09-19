@@ -14,11 +14,13 @@
  * continuous scroll rotation and the discrete hover scale never fight
  * over the same transform.
  *
- * Swap in real renders: replace the .ring-art gradient divs with
- * next/image thumbnails per project — see RING_ART below.
+ * The Bidyaloy.academy recording plays in RING_VIDEO_SLOTS (three evenly
+ * spaced tiles, not all ten, to avoid ten simultaneous video decodes); the
+ * rest still use RING_ART gradients.
  */
 
 import { useEffect, useRef, useState } from "react";
+import AutoVideo from "./AutoVideo";
 
 const RING_COUNT = 10;
 const RING_SPEED = 0.06; // deg rotated per px scrolled
@@ -36,11 +38,18 @@ const RING_ART = [
   "linear-gradient(160deg, var(--grey), var(--ink))",
 ];
 
+const RING_VIDEO = { src: "/bidyaloy/bidyaloy.mp4", poster: "/bidyaloy/bidyaloy-poster.jpg" };
+const RING_VIDEO_SLOTS = new Set([0, 3, 7]);
+
 function RingCard({ index }: { index: number }) {
   return (
     <div className="ring-card" style={{ "--i": index } as React.CSSProperties}>
       <div className="ring-card__inner" style={{ "--i": index } as React.CSSProperties}>
-        <div className="ring-art" style={{ background: RING_ART[index % RING_ART.length] }} />
+        <div className="ring-art" style={{ background: RING_ART[index % RING_ART.length] }}>
+          {RING_VIDEO_SLOTS.has(index) && (
+            <AutoVideo src={RING_VIDEO.src} poster={RING_VIDEO.poster} className="absolute inset-0 h-full w-full object-cover" />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -51,7 +60,11 @@ function StaticRingGrid() {
     <div className="mx-auto grid max-w-3xl grid-cols-4 gap-3 px-6 py-12 sm:grid-cols-5">
       {Array.from({ length: RING_COUNT }, (_, i) => (
         <div key={i} className="relative aspect-[3/4] overflow-hidden rounded-2xl shadow-lg"
-          style={{ background: RING_ART[i % RING_ART.length] }} />
+          style={{ background: RING_ART[i % RING_ART.length] }}>
+          {RING_VIDEO_SLOTS.has(i) && (
+            <AutoVideo src={RING_VIDEO.src} poster={RING_VIDEO.poster} className="absolute inset-0 h-full w-full object-cover" />
+          )}
+        </div>
       ))}
     </div>
   );
@@ -93,7 +106,7 @@ export default function WorkRing() {
 
   if (useSimple) {
     return (
-      <section className="relative overflow-hidden py-24 text-center" style={{ background: "var(--ink)" }}>
+      <section data-theme="dark" className="relative overflow-hidden py-24 text-center" style={{ background: "var(--ink)" }}>
         <a href="#work" className="font-display font-black leading-[0.85] tracking-tight" style={{ fontSize: "clamp(2.4rem, 9vw, 4.5rem)", color: "var(--grey)" }}>
           See more<br />work
         </a>
@@ -103,7 +116,7 @@ export default function WorkRing() {
   }
 
   return (
-    <section className="relative" style={{ minHeight: "100vh", background: "var(--ink)", overflow: "visible" }}>
+    <section data-theme="dark" className="relative" style={{ minHeight: "100vh", background: "var(--ink)", overflow: "visible" }}>
       <div className="relative flex h-screen w-full items-center justify-center overflow-hidden">
         <a
           href="#work"

@@ -19,6 +19,7 @@
  * (lenis.stop()/start(), see LenisProvider's useLenis()) while it's open.
  */
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useLenis } from "./LenisProvider";
 
@@ -122,16 +123,16 @@ function SubmenuOverlay({ open, onClose }: { open: boolean; onClose: () => void 
 
         <div className="grid grid-cols-2 gap-4">
           {SERVICE_TILES.map((t) => (
-            <a
+            <Link
               key={t.label}
-              href="#services"
+              href="/#services"
               onClick={onClose}
               className="relative overflow-hidden rounded-2xl"
               style={{ aspectRatio: "3 / 4", background: t.gradient }}
             >
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent 55%)" }} />
               <div className="absolute bottom-3 left-3 right-3 text-xs font-bold uppercase tracking-wide text-white">{t.label}</div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
@@ -220,7 +221,7 @@ export default function MobileNav() {
               {content}
             </button>
           ) : (
-            <a key={item.id} href={`#${item.id}`} onClick={() => setSubmenuOpen(false)} style={commonStyle}>
+            <a key={item.id} href={`/#${item.id}`} onClick={() => setSubmenuOpen(false)} style={commonStyle}>
               {content}
             </a>
           );
