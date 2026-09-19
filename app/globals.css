@@ -1,0 +1,463 @@
+@import "tailwindcss";
+
+:root {
+  --brand-light: #0a90d8;
+  --brand-mid:   #0070b0;
+  --brand-deep:  #012a5e;
+  --brand-sky:   #40d8ff;
+  --brand-cyan:  #00c0ff;
+
+  /* Paper canvas system — tinted with the logo's blue instead of warm cream */
+  --bg:            #e7f1fa;
+  --bg-d:          #dee8f2;
+  --bg-darker:     #d7e1ea;
+  --gradient-base: #eee1d7;
+  --ink:           #171412;
+  --grey:          #8e827c;
+  --low:           #cabcb5;
+  --surface-card:  #ffffff;
+
+  /* Accents — every tone pulled from the logo's own blue gradient (deep navy -> bright cyan) */
+  --accent:  #0a90d8;
+  --orange:  #00c0ff;
+  --yellow:  #7dd6ff;
+  --purple:  #0a2a54;
+  --red:     #40d8ff;
+
+  /* Scoped to the star-rating widget only — a rating convention, not a site accent */
+  --rating-star: #ffc765;
+
+  /* Motion tokens */
+  --dur-fast:   0.15s;
+  --dur-base:   0.24s;
+  --dur-slow:   0.42s;
+  --dur-reveal: 0.84s;
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-flyout: cubic-bezier(0.36, 0.33, 0, 1);
+  --ease-reveal: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans, Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brand-light);
+  color: #03070e;
+}
+
+/* ── Keyframes ── */
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes lineGrow {
+  from { transform: scaleX(0); transform-origin: left center; }
+  to   { transform: scaleX(1); transform-origin: left center; }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes stickerPop {
+  0%   { transform: scale(0) rotate(-22deg); opacity: 0; }
+  68%  { transform: scale(1.22) rotate(5deg);  opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+}
+
+@keyframes borderPulse {
+  0%, 100% { opacity: 0.35; }
+  50%       { opacity: 0.85; }
+}
+
+@keyframes scanDown {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(300%);  }
+}
+
+@keyframes counterGlow {
+  0%, 100% { text-shadow: 0 0 20px currentColor; }
+  50%       { text-shadow: 0 0 60px currentColor, 0 0 120px currentColor; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Lenis smooth scroll ── */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ── Icon rail: dock-style pointer magnetism ── */
+.rail-tile {
+  width: 68px;
+  height: 68px;
+  border-radius: 21.76px;
+  background: rgba(142, 130, 124, 0.14);
+  color: var(--grey);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.rail-dock.rail-settle .rail-tile {
+  transition:
+    width 0.55s var(--ease-flyout),
+    height 0.55s var(--ease-flyout),
+    border-radius 0.55s var(--ease-flyout),
+    background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+.rail-tile.rail-active {
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 14px 30px rgba(20, 18, 16, 0.22);
+}
+.rail-tile:focus-visible {
+  outline: 2.5px solid var(--accent);
+  outline-offset: 3px;
+}
+.rail-icon-wrap {
+  display: inline-flex;
+  transition: transform 0.55s var(--ease-flyout);
+}
+.rail-dock:not(.rail-settle) .rail-icon-wrap {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-tile, .rail-icon-wrap {
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+  }
+}
+
+/* ── Full-screen menu panel ── */
+.menu-link {
+  display: block;
+  color: rgba(251, 249, 239, 0.55);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.menu-link:hover {
+  color: var(--bg);
+}
+.menu-panel {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 249, 239, 0.25) transparent;
+}
+
+/* ── Always light — override any OS dark-mode preference ── */
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background: var(--bg)    !important;
+    color: var(--ink)        !important;
+  }
+}
+
+/* ── Fanned testimonial cards — two-layer transform so hover and scroll
+   never fight: the outer .fan-card carries the hover transition; the
+   inner .fan-card__scroll is written every rAF frame with no transition
+   at all, so it tracks scroll 1:1 with zero added lag. ── */
+.fan-card {
+  position: relative;
+  transform-origin: center bottom;
+  transition: transform 0.64s var(--ease-flyout);
+  will-change: transform;
+}
+.fan-card__scroll {
+  transform: rotate(0deg) translateY(0px);
+}
+
+/* ── Mobile testimonial carousel — side-scrolling with scroll-snap;
+   scrollbar hidden, parallax per-card transform written in page.tsx ── */
+.testimonial-carousel {
+  scrollbar-width: none;
+}
+.testimonial-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Work ring — radial rotating card cluster (see WorkRing.tsx) ── */
+:root {
+  --ring-radius: 320px;
+  --ring-card-w: 190px;
+}
+@media (max-width: 900px) {
+  :root { --ring-radius: 220px; --ring-card-w: 140px; }
+}
+@media (max-width: 560px) {
+  :root { --ring-radius: 150px; --ring-card-w: 104px; }
+}
+
+.ring-scale-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.64s var(--ease-flyout);
+  will-change: transform;
+}
+.ring-rotate-wrap {
+  position: relative;
+  width: 1px;
+  height: 1px;
+}
+.ring-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--ring-card-w);
+  aspect-ratio: 3 / 4;
+  transform: translate(-50%, -50%) rotate(calc(var(--i) * 36deg)) translateY(calc(var(--ring-radius) * -1));
+  transition: width 0.64s var(--ease-flyout);
+}
+.ring-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  transform: rotate(calc(var(--i) * -36deg));
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
+}
+.ring-art {
+  position: absolute;
+  inset: 0;
+}
+.ring-art::before {
+  /* keyring loop */
+  content: "";
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.55);
+}
+.ring-art::after {
+  /* glossy highlight */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(200deg, rgba(255, 255, 255, 0.28), transparent 45%);
+}
+
+/* ── Ship deck — pinned 3D flip-deck (see ShipDeck.tsx) ──
+   GSAP owns every transform below via gsap.set/gsap.to, so these rules
+   intentionally carry no `transition` — a scrubbed timeline writes a new
+   transform every tick and a CSS transition would just fight it. */
+.stack-wrapper {
+  position: relative;
+  height: 800vh;
+}
+.stack-list {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stack-frame {
+  position: relative;
+  width: min(90%, 1040px);
+  height: min(68vh, 580px);
+  perspective: 100px;
+  cursor: none;
+}
+.stack-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 1.2em;
+  padding: clamp(20px, 3.4%, 44px);
+  overflow: hidden;
+  color: var(--bg);
+  will-change: transform, opacity;
+}
+.stack-card--first {
+  position: relative;
+}
+
+.stack-card__number {
+  position: absolute;
+  top: 3vw;
+  right: 3.2vw;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.stack-card__body {
+  max-width: 640px;
+}
+.stack-card__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.05;
+  font-size: clamp(1.6rem, 3.4vw, 3rem);
+  color: var(--bg);
+}
+.stack-card__desc {
+  margin-top: 18px;
+  max-width: 480px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stack-card__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.stack-card__meta {
+  max-width: 320px;
+}
+.stack-card__meta-label {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.stack-card__stack {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.stack-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 460px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.stack-card__chip {
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* ── Mobile — same pinned/scrubbed animation, resized card ── */
+@media (max-width: 640px) {
+  .stack-frame {
+    width: 92vw;
+    height: min(84vh, 640px);
+    cursor: auto;
+  }
+  .stack-card {
+    padding: 22px 20px;
+  }
+  .stack-card__number {
+    top: 20px;
+    right: 20px;
+    font-size: 1.5rem;
+  }
+  .stack-card__title {
+    font-size: 1.5rem;
+  }
+  .stack-card__desc {
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .stack-card__bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .stack-card__meta {
+    max-width: none;
+  }
+  .stack-card__chips {
+    justify-content: flex-start;
+    max-width: none;
+    gap: 6px;
+  }
+  .stack-card__chip {
+    padding: 5px 11px;
+    font-size: 10.5px;
+  }
+}
+
+/* ── Custom cursor pill for the ship deck ── */
+.deck-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  pointer-events: none;
+  white-space: nowrap;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-geist-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+  transition: opacity 0.3s ease;
+}
