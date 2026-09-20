@@ -64,7 +64,7 @@ export function RevealWords({ text, as: Tag = "h2", by = "word", stagger = 0.06,
               transition: reduced ? "none" : `transform 1s ${EASE} ${delay + i * stagger}s`,
             }}
           >
-            {part}
+            {part === " " ? " " : part}
             {by === "word" && i < parts.length - 1 ? " " : ""}
           </span>
         </span>

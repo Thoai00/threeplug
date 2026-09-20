@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import AutoVideo from "../../AutoVideo";
 import SiteChrome from "../../SiteChrome";
 import { CASES, getCase } from "../cases";
+import { WORK } from "../projects";
 import { CountUp, Reveal, RevealMedia, RevealWords } from "../Motion";
 
 export const dynamicParams = false;
@@ -29,6 +30,11 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const c = getCase(slug);
   if (!c) notFound();
+
+  const project = WORK.find((w) => w.slug === c.slug);
+  const next = CASES[(CASES.findIndex((x) => x.slug === c.slug) + 1) % CASES.length];
+  // long names overflow at 16vw, so scale the cap with the character count
+  const nameVw = Math.min(16, Math.round(150 / c.name.length));
 
   const meta = [
     { k: "Year", v: c.year },
@@ -59,7 +65,7 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
           stagger={0.045}
           delay={0.15}
           className="mt-8 font-display font-black leading-[0.9] tracking-tight"
-          style={{ fontSize: "clamp(4.5rem, 16vw, 13rem)" }}
+          style={{ fontSize: `clamp(3rem, ${nameVw}vw, 13rem)` }}
         />
 
         <dl className="mt-10 flex flex-wrap justify-center gap-x-16 gap-y-6">
@@ -83,17 +89,24 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
         </Reveal>
       </section>
 
-      {/* Video straddles the dark → light seam */}
-      {c.video && (
-        <div className="relative">
-          <div data-theme="dark" className="absolute inset-x-0 top-0 h-1/2" style={{ background: DARK }} />
-          <div className="relative mx-auto max-w-7xl px-6 md:pl-32">
-            <RevealMedia className="overflow-hidden rounded-3xl shadow-2xl" style={{ aspectRatio: "1280 / 672", background: "#1e1714" }}>
+      {/* Cover straddles the dark → light seam: the recording where there is one,
+          the project's own colour otherwise */}
+      <div className="relative">
+        <div data-theme="dark" className="absolute inset-x-0 top-0 h-1/2" style={{ background: DARK }} />
+        <div className="relative mx-auto max-w-7xl px-6 md:pl-32">
+          <RevealMedia className="overflow-hidden rounded-3xl shadow-2xl" style={{ aspectRatio: "1280 / 672", background: "#1e1714" }}>
+            {c.video ? (
               <AutoVideo src={c.video.src} poster={c.video.poster} className="h-full w-full object-cover" />
-            </RevealMedia>
-          </div>
+            ) : (
+              <div className={`flex h-full w-full items-center justify-center bg-[#141210] bg-gradient-to-br ${project?.color ?? ""}`}>
+                <span className="px-8 text-center font-display font-black uppercase leading-none tracking-tight" style={{ fontSize: "clamp(2rem, 7vw, 6rem)", color: "rgba(251,249,239,0.9)" }}>
+                  {c.name}
+                </span>
+              </div>
+            )}
+          </RevealMedia>
         </div>
-      )}
+      </div>
 
       {/* Lower half — light */}
       <div className="mx-auto max-w-7xl px-6 pb-10 pt-24 md:pl-32">
@@ -172,6 +185,12 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
           </Link>
           <Link href="/#work" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-black/5" style={{ border: "1px solid rgba(20,18,16,0.25)" }}>
             ← All work
+          </Link>
+        </Reveal>
+        <Reveal delay={0.45} className="mt-14">
+          <Link href={`/work/${next.slug}`} className="group inline-flex flex-col items-center gap-1">
+            <span className="font-mono text-[11px] uppercase tracking-[0.2em]" style={{ color: "rgba(20,18,16,0.45)" }}>Next case</span>
+            <span className="font-display text-2xl font-black tracking-tight transition-transform group-hover:translate-x-1 md:text-3xl">{next.name} →</span>
           </Link>
         </Reveal>
       </section>

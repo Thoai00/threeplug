@@ -34,11 +34,10 @@ function RailGlyph({ name }: { name: "bag" | "building" | "target" | "smiley" | 
 }
 
 const CHROME_LINKS: { id: string; label: string; icon: "bag" | "building" | "target" | "smiley" | "docs" | "mail" }[] = [
-  { id: "services", label: "Services", icon: "bag" },
+  { id: "work",     label: "Work",     icon: "docs" },
   { id: "process",  label: "Process",  icon: "building" },
   { id: "why",      label: "Why us",   icon: "target" },
   { id: "about",    label: "About us", icon: "smiley" },
-  { id: "work",     label: "Work",     icon: "docs" },
   { id: "contact",  label: "Contact",  icon: "mail" },
 ];
 
@@ -46,13 +45,13 @@ const CHROME_LINKS: { id: string; label: string; icon: "bag" | "building" | "tar
 function TopBar({ dark }: { dark: boolean }) {
   return (
     <>
-      <Link href="/#top" className="fixed top-6 left-6 z-[998] flex items-center">
+      <Link href="/#top" className="fixed left-4 top-4 z-[998] flex items-center md:left-6 md:top-6">
         <Image src="/logoh.png" alt="Three Plug — Software Solutions" width={377} height={251} priority
-          className="h-16 w-auto drop-shadow-[0_2px_10px_rgba(20,18,16,0.12)]"
+          className="h-9 w-auto drop-shadow-[0_2px_10px_rgba(20,18,16,0.12)] md:h-16"
           style={{ filter: dark ? "brightness(0) invert(1)" : "none", transition: "filter 0.4s ease" }} />
       </Link>
       <Link href="/#contact"
-        className="fixed top-6 right-6 z-[998] rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-wide transition-transform hover:scale-105"
+        className="fixed right-6 top-6 z-[998] hidden rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-wide transition-transform hover:scale-105 md:block"
         style={{ background: dark ? "#fbf9ef" : "var(--ink)", color: dark ? "var(--ink)" : "var(--bg)", transition: "background-color 0.4s ease, color 0.4s ease" }}>
         Book a call now
       </Link>
@@ -84,14 +83,12 @@ const RAIL_GAP = 14;
 const RAIL_RADIUS_RATIO = 0.32;
 const RAIL_ICON_PEAK_SCALE = 1.25;
 const RAIL_LEFT = 24; // matches left-6
-const SERVICES_INDEX = CHROME_LINKS.findIndex((l) => l.id === "services");
 
 function IconRail({ dark }: { dark: boolean }) {
   const dockRef = useRef<HTMLDivElement>(null);
   const tileRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const iconRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const pillRef = useRef<HTMLDivElement>(null);
-  const drawerRef = useRef<HTMLDivElement>(null);
 
   const [activeIndex, setActiveIndex] = useState(-1);
   const activeIndexRef = useRef(-1);
@@ -149,11 +146,7 @@ function IconRail({ dark }: { dark: boolean }) {
     const tile = tileRefs.current[idx];
     if (!tile) return;
     const centerY = tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2;
-    if (idx === SERVICES_INDEX) {
-      if (drawerRef.current) drawerRef.current.style.top = `${Math.max(16, Math.min(centerY - 341, window.innerHeight - 698))}px`;
-    } else if (pillRef.current) {
-      pillRef.current.style.top = `${centerY}px`;
-    }
+    if (pillRef.current) pillRef.current.style.top = `${centerY}px`;
   };
 
   const setActive = (idx: number) => {
@@ -215,7 +208,7 @@ function IconRail({ dark }: { dark: boolean }) {
   const handleBlur = (e: React.FocusEvent) => {
     if (pointerActive.current) return;
     const next = e.relatedTarget as Node | null;
-    if (next && (drawerRef.current?.contains(next) || pillRef.current?.contains(next))) return;
+    if (next && pillRef.current?.contains(next)) return;
     dockRef.current?.classList.add("rail-settle");
     resetSizes();
     setActive(-1);
@@ -235,7 +228,7 @@ function IconRail({ dark }: { dark: boolean }) {
         {CHROME_LINKS.map((l, i) => (
           <a
             key={l.id}
-            href={`/#${l.id}`}
+            href={l.id === "work" ? "/work" : `/#${l.id}`}
             ref={(el) => { tileRefs.current[i] = el; }}
             onFocus={() => handleFocus(i)}
             onBlur={handleBlur}
@@ -251,7 +244,7 @@ function IconRail({ dark }: { dark: boolean }) {
       </div>
     </div>
 
-      {/* Label pill — follows any non-Services tile */}
+      {/* Label pill — follows the hovered tile */}
       <div
         ref={pillRef}
         onPointerEnter={handleFlyoutEnter}
@@ -263,60 +256,15 @@ function IconRail({ dark }: { dark: boolean }) {
           backdropFilter: "blur(12px)",
           boxShadow: "0 8px 20px rgba(20,18,16,0.12)",
           color: "var(--ink)",
-          opacity: activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? 1 : 0,
-          transform: `translateY(-50%) translateX(${activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? 0 : -6}px)`,
+          opacity: activeIndex !== -1 ? 1 : 0,
+          transform: `translateY(-50%) translateX(${activeIndex !== -1 ? 0 : -6}px)`,
           transition: "opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out)",
-          pointerEvents: activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? "auto" : "none",
+          pointerEvents: activeIndex !== -1 ? "auto" : "none",
         }}
       >
-        {activeIndex !== -1 && activeIndex !== SERVICES_INDEX ? CHROME_LINKS[activeIndex].label : ""}
+        {activeIndex !== -1 ? CHROME_LINKS[activeIndex].label : ""}
       </div>
 
-      {/* Services mega-panel — follows the Services tile. Frosted-glass panel
-          over a photo-card grid, bottom-left overlaid title, matching the
-          Brand Appart reference. */}
-      <div
-        ref={drawerRef}
-        onPointerEnter={handleFlyoutEnter}
-        onPointerLeave={handleFlyoutLeave}
-        className="fixed z-[998] w-[560px] rounded-3xl p-6"
-        style={{
-          left: RAIL_LEFT + RAIL_PEAK + 14,
-          background: "rgba(142,130,124,0.72)",
-          backdropFilter: "blur(28px)",
-          WebkitBackdropFilter: "blur(28px)",
-          color: "var(--bg)",
-          opacity: activeIndex === SERVICES_INDEX ? 1 : 0,
-          transform: activeIndex === SERVICES_INDEX ? "scale(1)" : "scale(0.97) translateX(-8px)",
-          transformOrigin: "left center",
-          pointerEvents: activeIndex === SERVICES_INDEX ? "auto" : "none",
-          transition: `opacity var(--dur-slow) var(--ease-flyout), transform var(--dur-slow) var(--ease-flyout)`,
-          boxShadow: "0 24px 60px rgba(0,0,0,0.25)",
-        }}
-      >
-        <div className="mb-5 text-center font-mono text-[11px] uppercase tracking-[0.25em]" style={{ color: "rgba(251,249,239,0.75)" }}>
-          Services
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          {SERVICE_MEGA.map((s, i) => {
-            const open = activeIndex === SERVICES_INDEX;
-            return (
-              <Link key={s.label} href="/#services"
-                className="relative overflow-hidden rounded-2xl hover:scale-[1.03]"
-                style={{
-                  aspectRatio: "6 / 5",
-                  background: s.gradient,
-                  opacity: open ? 1 : 0,
-                  transform: open ? "translateY(0)" : "translateY(6px)",
-                  transition: `opacity 0.35s ${open ? i * 30 : 0}ms, transform 0.35s ${open ? i * 30 : 0}ms`,
-                }}>
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent 55%)" }} />
-                <div className="absolute bottom-2.5 left-2.5 right-2.5 text-[10.5px] font-bold uppercase leading-tight tracking-wide text-white">{s.label}</div>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
     </>
   );
 }
@@ -332,7 +280,7 @@ function MenuFlyout({ dark }: { dark: boolean }) {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label={open ? "Close menu" : "Open menu"}
-        className="fixed bottom-6 left-6 z-[999] flex flex-col items-start gap-2"
+        className="fixed bottom-6 left-6 z-[999] hidden flex-col items-start gap-2 md:flex"
         style={{ color: dark ? "#fbf9ef" : "var(--ink)", transition: "color 0.4s ease" }}
       >
         <span className="relative block h-[11px] w-[52px] overflow-hidden text-[11px] font-black uppercase tracking-[0.15em]">
@@ -444,7 +392,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="fixed bottom-6 right-6 z-[998] hidden rounded-full px-4 py-2.5 text-right font-mono text-[10px] uppercase tracking-widest sm:block"
+    <div className="fixed bottom-6 right-6 z-[998] hidden rounded-full px-4 py-2.5 text-right font-mono text-[10px] uppercase tracking-widest md:block"
       style={{ color: "var(--grey)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)", boxShadow: "0 8px 24px rgba(20,18,16,0.08)" }}>
       Remote-first <span style={{ color: "var(--ink)", fontWeight: 600 }}>{time ?? "--:--"}</span>
     </div>
@@ -486,7 +434,7 @@ export default function SiteChrome() {
     <>
       <TopBar dark={dark.top} />
       <IconRail dark={dark.mid} />
-      <MobileNav />
+      <MobileNav dark={dark.top} />
       <MenuFlyout dark={dark.bottom} />
       <ScrollProgressLine />
       <LiveClock />

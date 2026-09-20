@@ -10,43 +10,24 @@
  * belt-and-braces) so exactly one of the two is ever mounted/visible —
  * desktop's TopBar / IconRail / MenuFlyout are untouched by this file.
  *
- * Same 6 items as IconRail's CHROME_LINKS, same RailGlyph icon set
+ * Same 5 items as IconRail's CHROME_LINKS, same RailGlyph icon set
  * (duplicated here rather than importing from page.tsx, to keep this
  * component fully standalone like ShipDeck.tsx / HeroCarousel.tsx). Real
- * pages navigate via their #anchor as they already do site-wide; Services
- * opens a submenu overlay — a full-screen panel of service tiles, reveal
- * animated on transform/opacity/filter only, with Lenis paused
- * (lenis.stop()/start(), see LenisProvider's useLenis()) while it's open.
+ * pages navigate via their #anchor as they already do site-wide; Work
+ * links out to the /work index page. The bar stays hidden until the
+ * top-right toggle opens it, mirroring the reference site's menu button.
  */
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useLenis } from "./LenisProvider";
 
 type IconName = "bag" | "building" | "target" | "smiley" | "docs" | "mail";
 
-const NAV_ITEMS: { id: string; label: string; icon: IconName; submenu?: boolean }[] = [
-  { id: "services", label: "Services", icon: "bag",      submenu: true },
+const NAV_ITEMS: { id: string; label: string; icon: IconName; href?: string }[] = [
+  { id: "work",     label: "Work",     icon: "docs",     href: "/work" },
   { id: "process",  label: "Process",  icon: "building" },
   { id: "why",      label: "Why us",   icon: "target" },
   { id: "about",    label: "About us", icon: "smiley" },
-  { id: "work",     label: "Work",     icon: "docs" },
   { id: "contact",  label: "Contact",  icon: "mail" },
-];
-
-const SERVICE_TILES = [
-  { label: "Website Development", gradient: "linear-gradient(160deg, #cdeeff, var(--brand-light) 55%, var(--brand-deep))" },
-  { label: "Web Applications",    gradient: "linear-gradient(160deg, var(--brand-light), var(--brand-deep))" },
-  { label: "Mobile Applications", gradient: "linear-gradient(160deg, #0b4a42, #05221d)" },
-  { label: "Desktop Software",    gradient: "linear-gradient(160deg, var(--ink), #3a332e)" },
-  { label: "ERP Solutions",       gradient: "linear-gradient(160deg, #5a2a0f, #2a1206)" },
-  { label: "CRM Solutions",       gradient: "linear-gradient(160deg, #4a1f42, #24101f)" },
-  { label: "Digital Marketing",   gradient: "linear-gradient(160deg, #3a2a5e, #1a1230)" },
-  { label: "Animation & Motion",  gradient: "linear-gradient(160deg, #5c1d2b, #2b0d14)" },
-  { label: "Character Animation", gradient: "linear-gradient(160deg, var(--grey), var(--ink))" },
-  { label: "3D Web Experience",   gradient: "radial-gradient(120% 120% at 30% 80%, var(--brand-sky), var(--brand-mid) 60%, var(--ink))" },
-  { label: "3D Visualisation",    gradient: "linear-gradient(160deg, #07445c, #03202b)" },
-  { label: "DevOps & Cloud",      gradient: "linear-gradient(160deg, #143a2a, #08190f)" },
 ];
 
 function NavGlyph({ name }: { name: IconName }) {
@@ -63,86 +44,9 @@ function NavGlyph({ name }: { name: IconName }) {
 
 const EASE = "cubic-bezier(.36,.33,0,1)";
 
-function SubmenuOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const lenisRef = useLenis();
-
-  useEffect(() => {
-    const lenis = lenisRef?.current;
-    if (!lenis) return;
-    if (open) lenis.stop(); else lenis.start();
-    // Safety: never leave scroll locked if this unmounts while open.
-    return () => lenis.start();
-  }, [open, lenisRef]);
-
-  return (
-    <>
-      <div
-        onClick={onClose}
-        aria-hidden="true"
-        style={{
-          position: "fixed", inset: 0, zIndex: 996,
-          background: "rgba(23,18,16,0.4)",
-          backdropFilter: open ? "blur(4px)" : "blur(0px)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: `opacity .5s ${EASE}, backdrop-filter .5s ${EASE}`,
-        }}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Services"
-        style={{
-          position: "fixed", inset: 0, zIndex: 997,
-          background: "var(--ink)",
-          padding: "28px 20px 120px",
-          overflowY: "auto",
-          transformOrigin: "center bottom",
-          transform: open ? "scale(1)" : "scale(0.96)",
-          filter: open ? "blur(0px)" : "blur(6px)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: `transform .64s ${EASE}, filter .64s ${EASE}, opacity .64s ${EASE}`,
-        }}
-      >
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            position: "absolute", top: 20, right: 20,
-            display: "flex", height: 40, width: 40, alignItems: "center", justifyContent: "center",
-            borderRadius: 999, background: "rgba(251,249,239,0.08)", color: "var(--bg)",
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M5 5l14 14M19 5 5 19" /></svg>
-        </button>
-
-        <div className="mb-6 mt-2 text-center font-mono text-xs uppercase tracking-[0.25em]" style={{ color: "rgba(251,249,239,0.4)" }}>
-          Services
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          {SERVICE_TILES.map((t) => (
-            <Link
-              key={t.label}
-              href="/#services"
-              onClick={onClose}
-              className="relative overflow-hidden rounded-2xl"
-              style={{ aspectRatio: "3 / 4", background: t.gradient }}
-            >
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent 55%)" }} />
-              <div className="absolute bottom-3 left-3 right-3 text-xs font-bold uppercase tracking-wide text-white">{t.label}</div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-export default function MobileNav() {
+export default function MobileNav({ dark = false }: { dark?: boolean }) {
   const [isMobile, setIsMobile] = useState(false);
-  const [submenuOpen, setSubmenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -160,7 +64,7 @@ export default function MobileNav() {
   useEffect(() => {
     if (!isMobile) return;
     const targets = NAV_ITEMS
-      .filter((i) => !i.submenu)
+      .filter((i) => !i.href)
       .map((i) => document.getElementById(i.id))
       .filter((el): el is HTMLElement => el !== null);
     if (targets.length === 0) return;
@@ -181,24 +85,65 @@ export default function MobileNav() {
 
   return (
     <>
+      <button
+        type="button"
+        aria-label={open ? "Close navigation" : "Open navigation"}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="md:hidden"
+        style={{
+          position: "fixed", top: 16, right: 16, zIndex: 999,
+          height: 44, width: 44, borderRadius: 13,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: dark ? "#fbf9ef" : "var(--ink)",
+          color: dark ? "var(--ink)" : "var(--bg)",
+          boxShadow: "0 10px 30px rgba(20,18,16,0.22)",
+          transition: `background-color .4s ease, color .4s ease`,
+        }}
+      >
+        {open ? (
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M5 5l14 14M19 5 5 19" /></svg>
+        ) : (
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round"><path d="M4 9h16M4 15h16" /></svg>
+        )}
+      </button>
+
+      <div
+        onClick={() => setOpen(false)}
+        aria-hidden="true"
+        className="md:hidden"
+        style={{
+          position: "fixed", inset: 0, zIndex: 997,
+          background: "rgba(20,18,16,0.28)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: `opacity .4s ${EASE}`,
+        }}
+      />
+
       <nav
         className="md:hidden"
         style={{
-          position: "fixed", bottom: 8, left: "50%", transform: "translateX(-50%)",
+          position: "fixed", bottom: 0, left: 0, right: 0,
           zIndex: 998,
-          display: "flex", flexDirection: "row", alignItems: "center", gap: 2,
-          background: "rgba(36,31,29,0.9)",
+          display: "flex", flexDirection: "row", alignItems: "stretch",
+          background: "rgba(36,31,29,0.94)",
           backdropFilter: "blur(32px)",
-          borderRadius: 16,
-          padding: "0 8px",
-          boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
+          borderTopLeftRadius: 18, borderTopRightRadius: 18,
+          padding: "6px 4px calc(6px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -8px 30px rgba(0,0,0,0.3)",
+          transform: open ? "translateY(0)" : "translateY(115%)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: `transform .5s ${EASE}, opacity .4s ${EASE}`,
         }}
       >
         {NAV_ITEMS.map((item) => {
-          const active = item.submenu ? submenuOpen : activeId === item.id;
+          const active = activeId === item.id;
           const commonStyle: React.CSSProperties = {
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-            padding: "10px 10px 9px",
+            flex: "1 1 0", minWidth: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5,
+            padding: "8px 2px 7px",
             color: active ? "var(--bg)" : "rgba(251,249,239,0.62)",
             background: active ? "rgba(251,249,239,0.1)" : "transparent",
             borderRadius: 10,
@@ -207,28 +152,16 @@ export default function MobileNav() {
           const content = (
             <>
               <NavGlyph name={item.icon} />
-              <span className="font-mono" style={{ fontSize: 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>{item.label}</span>
+              <span className="font-mono" style={{ fontSize: 8.5, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{item.label}</span>
             </>
           );
-          return item.submenu ? (
-            <button
-              key={item.id}
-              type="button"
-              aria-expanded={submenuOpen}
-              onClick={() => setSubmenuOpen((o) => !o)}
-              style={commonStyle}
-            >
-              {content}
-            </button>
-          ) : (
-            <a key={item.id} href={`/#${item.id}`} onClick={() => setSubmenuOpen(false)} style={commonStyle}>
+          return (
+            <a key={item.id} href={item.href ?? `/#${item.id}`} onClick={() => setOpen(false)} style={commonStyle}>
               {content}
             </a>
           );
         })}
       </nav>
-
-      <SubmenuOverlay open={submenuOpen} onClose={() => setSubmenuOpen(false)} />
     </>
   );
 }
