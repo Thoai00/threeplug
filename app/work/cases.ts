@@ -11,6 +11,8 @@ export type CaseSection = {
 
 export type CaseStudy = {
   slug: string;
+  /** [top, base] of the hero gradient — base also paints the seam behind the cover. */
+  hero: [string, string];
   name: string;
   year: string;
   industry: string;
@@ -25,6 +27,7 @@ const shot = (file: string, alt: string): CaseImage => ({ src: `/bidyaloy/${file
 export const CASES: CaseStudy[] = [
   {
     slug: "bidyaloy",
+    hero: ["#0d4a95", "#04142a"],
     name: "Bidyaloy",
     year: "2025",
     industry: "Education",
@@ -89,6 +92,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "bidyaloy-app",
+    hero: ["#0e5f70", "#041c22"],
     name: "Bidyaloy App",
     year: "2025",
     industry: "Education",
@@ -104,6 +108,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "health-app",
+    hero: ["#12694a", "#04170f"],
     name: "Health App",
     year: "2025",
     industry: "Healthcare",
@@ -119,6 +124,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "business-erp",
+    hero: ["#a1571a", "#2a1206"],
     name: "Business ERP",
     year: "2025",
     industry: "Enterprise",
@@ -134,6 +140,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "sales-crm",
+    hero: ["#0f6b4e", "#05221d"],
     name: "Sales CRM",
     year: "2025",
     industry: "Sales",
@@ -149,6 +156,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "n8n-flows",
+    hero: ["#a82b53", "#1a0d1f"],
     name: "n8n Flows",
     year: "2025",
     industry: "Automation",
@@ -164,6 +172,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "enterprise-crm",
+    hero: ["#54399a", "#120a24"],
     name: "Enterprise CRM",
     year: "2025",
     industry: "Enterprise",
@@ -179,6 +188,7 @@ export const CASES: CaseStudy[] = [
   },
   {
     slug: "agentic-ai",
+    hero: ["#5b38c9", "#0b0716"],
     name: "Agentic AI",
     year: "2025",
     industry: "AI",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Project } from "./projects";
+import { track } from "../analytics";
 
 const EASE = "cubic-bezier(0.36,0.33,0,1)";
 
@@ -55,7 +56,13 @@ export default function CaseLabel({ work: w, size = "lg" }: { work: Project; siz
 
   return (
     <>
-      <Link href={href} aria-label={`${w.name} case study`} className="absolute inset-0 z-10" tabIndex={-1} />
+      <Link
+        href={href}
+        aria-label={`${w.name} case study`}
+        className="absolute inset-0 z-10"
+        tabIndex={-1}
+        onClick={() => track("case_study_open", { project: w.slug, via: "card" })}
+      />
       <div
         ref={boxRef}
         className="absolute z-20 overflow-hidden"
@@ -89,6 +96,7 @@ export default function CaseLabel({ work: w, size = "lg" }: { work: Project; siz
         </div>
         <Link
           href={href}
+          onClick={() => track("case_study_open", { project: w.slug, via: "discover_case" })}
           className="absolute font-display font-black uppercase tracking-tight text-white"
           style={{
             bottom: z.ctaInset[0],

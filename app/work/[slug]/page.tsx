@@ -6,6 +6,7 @@ import AutoVideo from "../../AutoVideo";
 import SiteChrome from "../../SiteChrome";
 import { CASES, getCase } from "../cases";
 import { WORK } from "../projects";
+import { COMPANY, SITE_URL, breadcrumbJsonLd } from "../../seo";
 import { CountUp, Reveal, RevealMedia, RevealWords } from "../Motion";
 
 export const dynamicParams = false;
@@ -18,10 +19,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const c = getCase(slug);
   if (!c) return {};
-  return { title: `${c.name} — ${c.industry} case study · Three Plug`, description: c.tagline };
+  const url = `${SITE_URL}/work/${c.slug}`;
+  const image = c.video?.poster ?? "/og.jpg";
+  return {
+    title: `${c.name} — ${c.services} case study`,
+    description: `${c.tagline} A Three Plug case study covering the challenge, the approach and the result for this ${c.industry.toLowerCase()} project.`,
+    keywords: [c.name, `${c.industry} software`, ...c.services.split(" · "), "case study", "Three Plug"],
+    alternates: { canonical: `/work/${c.slug}` },
+    openGraph: {
+      type: "article",
+      url,
+      title: `${c.name} — ${c.services}`,
+      description: c.tagline,
+      images: [{ url: image, alt: `${c.name} — ${c.tagline}` }],
+    },
+    twitter: { card: "summary_large_image", title: `${c.name} — ${c.services}`, description: c.tagline, images: [image] },
+  };
 }
 
-const DARK = "#141210";
 const LIGHT_TEXT = "#fbf9ef";
 const MUTED = "rgba(20,18,16,0.62)";
 const HAIRLINE = "rgba(20,18,16,0.1)";
@@ -44,10 +59,38 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CreativeWork",
+            name: c.name,
+            headline: `${c.name} — ${c.services}`,
+            description: c.tagline,
+            url: `${SITE_URL}/work/${c.slug}`,
+            about: c.industry,
+            dateCreated: c.year,
+            inLanguage: "en",
+            creator: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: COMPANY.legalName },
+            ...(c.video ? { video: { "@type": "VideoObject", name: `${c.name} walkthrough`, description: c.tagline, thumbnailUrl: `${SITE_URL}${c.video.poster}`, contentUrl: `${SITE_URL}${c.video.src}`, uploadDate: `${c.year}-01-01` } } : {}),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Work", path: "/work" },
+            { name: c.name, path: `/work/${c.slug}` },
+          ])),
+        }}
+      />
       <SiteChrome />
 
       {/* Upper half — dark */}
-      <section data-theme="dark" className="flex min-h-screen flex-col items-center justify-center px-6 pb-20 pt-36 text-center" style={{ background: DARK, color: LIGHT_TEXT }}>
+      <section data-theme="dark" className="flex min-h-screen flex-col items-center justify-center px-6 pb-14 pt-28 text-center md:pb-20 md:pt-36" style={{ background: `linear-gradient(168deg, ${c.hero[0]} 0%, ${c.hero[1]} 78%)`, color: LIGHT_TEXT }}>
         <Reveal y={12}>
           <nav className="font-mono text-xs" style={{ color: "rgba(251,249,239,0.35)" }} aria-label="Breadcrumb">
             <Link href="/" className="transition-colors hover:text-white">Home</Link>
@@ -82,7 +125,7 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
           text={c.tagline}
           stagger={0.025}
           delay={0.8}
-          className="mx-auto mt-auto max-w-3xl pt-20 text-2xl leading-snug md:text-4xl"
+          className="mx-auto mt-auto max-w-3xl pt-14 text-[26px] leading-snug md:pt-20 md:text-4xl"
         />
         <Reveal delay={1.3} y={10}>
           <div className="mt-10 font-mono text-xs" style={{ color: "rgba(251,249,239,0.3)" }}>(Scroll down)</div>
@@ -92,9 +135,9 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
       {/* Cover straddles the dark → light seam: the recording where there is one,
           the project's own colour otherwise */}
       <div className="relative">
-        <div data-theme="dark" className="absolute inset-x-0 top-0 h-1/2" style={{ background: DARK }} />
+        <div data-theme="dark" className="absolute inset-x-0 top-0 h-1/2" style={{ background: c.hero[1] }} />
         <div className="relative mx-auto max-w-7xl px-6 md:pl-32">
-          <RevealMedia className="overflow-hidden rounded-3xl shadow-2xl" style={{ aspectRatio: "1280 / 672", background: "#1e1714" }}>
+          <RevealMedia className="overflow-hidden rounded-3xl shadow-2xl" style={{ aspectRatio: "1280 / 672", background: c.hero[1] }}>
             {c.video ? (
               <AutoVideo src={c.video.src} poster={c.video.poster} className="h-full w-full object-cover" />
             ) : (
@@ -109,9 +152,9 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
       </div>
 
       {/* Lower half — light */}
-      <div className="mx-auto max-w-7xl px-6 pb-10 pt-24 md:pl-32">
+      <div className="mx-auto max-w-7xl px-6 pb-10 pt-16 md:pt-24 md:pl-32">
         {c.sections.map((s, i) => (
-          <section key={s.label} className="border-t py-20 md:py-28" style={{ borderColor: HAIRLINE }}>
+          <section key={s.label} className="border-t py-14 md:py-28" style={{ borderColor: HAIRLINE }}>
             <div className="grid gap-8 md:grid-cols-[220px_1fr] md:gap-16">
               <Reveal y={16}>
                 <div className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "rgba(20,18,16,0.45)" }}>
@@ -122,9 +165,9 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
                 <RevealWords
                   text={s.heading}
                   className="max-w-3xl font-display font-bold leading-[1.05] tracking-tight"
-                  style={{ fontSize: "clamp(2rem, 4.2vw, 3.5rem)" }}
+                  style={{ fontSize: "clamp(2.4rem, 5.2vw, 3.5rem)" }}
                 />
-                <div className="mt-8 max-w-2xl space-y-5 text-lg leading-relaxed" style={{ color: MUTED }}>
+                <div className="mt-7 max-w-2xl space-y-5 text-[17px] leading-relaxed md:text-lg" style={{ color: MUTED }}>
                   {s.body.map((p, j) => (
                     <Reveal key={p} delay={0.15 + j * 0.12}>
                       <p>{p}</p>
@@ -173,11 +216,11 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
       </div>
 
       {/* Close */}
-      <section className="border-t px-6 py-28 text-center md:pl-32" style={{ borderColor: HAIRLINE }}>
+      <section className="border-t px-6 py-16 text-center md:py-28 md:pl-32" style={{ borderColor: HAIRLINE }}>
         <RevealWords
           text="Have a project like this?"
           className="mx-auto max-w-4xl font-display font-black leading-[0.95] tracking-tight"
-          style={{ fontSize: "clamp(2.5rem, 7vw, 6rem)" }}
+          style={{ fontSize: "clamp(3rem, 9vw, 6rem)" }}
         />
         <Reveal delay={0.3} className="mt-12 flex flex-wrap items-center justify-center gap-4">
           <Link href="/#contact" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-transform hover:scale-105" style={{ background: "var(--ink)", color: "var(--bg)" }}>

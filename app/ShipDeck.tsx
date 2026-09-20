@@ -189,6 +189,7 @@ function StaticDeck() {
 
 export default function ShipDeck() {
   const [useSimple, setUseSimple] = useState(false);
+  const [finePointer, setFinePointer] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const stackListRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -196,10 +197,17 @@ export default function ShipDeck() {
 
   useEffect(() => {
     const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setUseSimple(reduceMq.matches);
+    // The deck cursor replaces the real cursor, so it only makes sense where
+    // there is one — on touch it would just sit in a corner of the screen.
+    const pointerMq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => { setUseSimple(reduceMq.matches); setFinePointer(pointerMq.matches); };
     update();
     reduceMq.addEventListener("change", update);
-    return () => reduceMq.removeEventListener("change", update);
+    pointerMq.addEventListener("change", update);
+    return () => {
+      reduceMq.removeEventListener("change", update);
+      pointerMq.removeEventListener("change", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -258,7 +266,7 @@ export default function ShipDeck() {
       <div ref={wrapperRef} className="stack-wrapper">
         <div ref={stackListRef} className="stack-list">
           <div
-            className="stack-frame"
+            className={`stack-frame${finePointer ? " stack-frame--cursorless" : ""}`}
             onMouseEnter={() => setCursorActive(true)}
             onMouseLeave={() => setCursorActive(false)}
           >
@@ -275,7 +283,7 @@ export default function ShipDeck() {
           </div>
         </div>
       </div>
-      <DeckCursor active={cursorActive} />
+      {finePointer && <DeckCursor active={cursorActive} />}
     </section>
   );
 }
@@ -283,7 +291,7 @@ export default function ShipDeck() {
 function DeckHeading() {
   return (
     <div className="relative z-10 mx-auto max-w-2xl px-6 pb-10 text-center md:pb-14">
-      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(2.2rem, 8vw, 5.6rem)", lineHeight: 0.8 }}>
+      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(2.9rem, 10vw, 5.6rem)", lineHeight: 0.82 }}>
         <span style={{ color: "var(--grey)" }}>What we ship.</span>
         <br />
         <span style={{ color: "var(--ink)" }}>Our ways to move fast</span>

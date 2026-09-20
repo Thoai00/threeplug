@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Raw source media — only the compressed web versions are shipped
+public/hero.mp4
+public/bidyaloy/*.mov

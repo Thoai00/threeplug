@@ -9,6 +9,8 @@ import SiteChrome, { SERVICE_MEGA } from "./SiteChrome";
 import { WORK } from "./work/projects";
 import { WorkGrid } from "./work/Cards";
 import { useReveal } from "./work/useReveal";
+import { track } from "./analytics";
+import { COMPANY, FAQS, faqJsonLd } from "./seo";
 
 /* ─── DATA ─── */
 const TESTIMONIALS = [
@@ -133,6 +135,7 @@ export default function Home() {
       <HeroCarousel />
       <StreamDivider color1="#0a90d8" color2="#00c0ff" />
       <Testimonials />
+      <FaqSection />
       <Footer />
     </div>
   );
@@ -155,7 +158,7 @@ function Hero() {
   const marqueeRow = [...clientNames, ...clientNames, ...clientNames, ...clientNames];
 
   return (
-    <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden pt-24 pb-16">
+    <section id="top" className="relative flex min-h-[86svh] flex-col justify-center overflow-hidden pb-10 pt-20 md:min-h-screen md:pb-16 md:pt-24">
       {/* Parallax background glow layer */}
       <div ref={parallaxBg} className="pointer-events-none absolute inset-0" style={{
         background: "radial-gradient(ellipse 70% 60% at 50% 20%, rgba(10,144,216,0.08), transparent 70%)",
@@ -166,7 +169,7 @@ function Hero() {
         <h1
           className="font-display font-black leading-[0.95] tracking-tight"
           style={{
-            fontSize: "clamp(2.6rem, 6.5vw, 6rem)",
+            fontSize: "clamp(3.15rem, 8.2vw, 6rem)",
             color: "#141210",
             animation: mounted ? "fadeUp 1s 0.15s both" : "none",
           }}>
@@ -185,24 +188,25 @@ function Hero() {
           you desire
         </h1>
 
-        <div className="mt-14 overflow-hidden" style={{ animation: mounted ? "fadeUp 1s 0.35s both" : "none" }}>
+        <div className="mt-8 overflow-hidden md:mt-14" style={{ animation: mounted ? "fadeUp 1s 0.35s both" : "none" }}>
           <div className="flex w-max animate-[marquee_28s_linear_infinite] items-center">
             {marqueeRow.map((name, i) => (
-              <span key={i} className="pr-16 text-sm font-bold uppercase tracking-wider" style={{ color: "rgba(20,18,16,0.32)" }}>
+              <span key={i} className="pr-10 text-[15px] font-bold uppercase tracking-wider md:pr-16 md:text-sm" style={{ color: "rgba(20,18,16,0.32)" }}>
                 {name}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-center gap-8"
+        <div className="mt-9 flex flex-col items-center gap-7 md:mt-14 md:gap-8"
           style={{ animation: mounted ? "fadeUp 1s 0.5s both" : "none" }}>
-          <p className="max-w-lg text-lg leading-relaxed" style={{ color: "rgba(20,18,16,0.6)" }}>
-            We help funded startups ship automation systems, growth marketing engines,
-            and investor-proof software.
+          <p className="max-w-xl text-lg leading-relaxed" style={{ color: "rgba(20,18,16,0.6)" }}>
+            Three Plug builds websites, web and mobile apps, desktop software, ERP and CRM
+            systems, digital marketing, animation and interactive 3D — twelve service
+            categories, delivered by one team, for clients anywhere in the world.
           </p>
 
-          <a href="#contact" className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
+          <a href="#contact" onClick={() => track("book_call_click", { location: "hero" })} className="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-widest transition-opacity hover:opacity-70"
             style={{ color: "#141210" }}>
             Book an intro call
             <span className="flex items-center -space-x-2">
@@ -231,8 +235,8 @@ function Hero() {
 function ShowreelPin() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const activeIndexRef = useRef(0);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
   const [useSimple, setUseSimple] = useState(false);
 
   useEffect(() => {
@@ -243,6 +247,7 @@ function ShowreelPin() {
     return () => reduceMq.removeEventListener("change", update);
   }, []);
 
+  // Scroll through the pinned section grows the card from a framed card to full-bleed.
   useEffect(() => {
     if (useSimple) return;
     let ticking = false;
@@ -264,12 +269,6 @@ function ShowreelPin() {
       card.style.width = `${startW + p * (vw - startW)}px`;
       card.style.height = `${startH + p * (vh - startH)}px`;
       card.style.borderRadius = `${28 * (1 - p)}px`;
-
-      const seg = Math.min(WORK.length - 1, Math.floor(p * WORK.length));
-      if (seg !== activeIndexRef.current) {
-        activeIndexRef.current = seg;
-        setActiveIndex(seg);
-      }
     };
 
     const onScroll = () => {
@@ -284,15 +283,69 @@ function ShowreelPin() {
     };
   }, [useSimple]);
 
+  // Plays only while the section is on screen; pausing off-screen also drops
+  // the audio the moment the viewer scrolls away.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) v.play().catch(() => {});
+      else v.pause();
+    }, { threshold: 0.25 });
+    io.observe(v);
+    return () => io.disconnect();
+  }, [useSimple]);
+
+  const toggleSound = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    if (!v.muted) v.play().catch(() => {});
+    setMuted(v.muted);
+    track("showreel_sound", { muted: v.muted });
+  };
+
+  const SoundButton = (
+    <button
+      type="button"
+      onClick={toggleSound}
+      aria-label={muted ? "Unmute showreel" : "Mute showreel"}
+      aria-pressed={!muted}
+      className="absolute left-1/2 top-1/2 z-10 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full transition-transform hover:scale-110"
+      style={{ background: "rgba(251,249,239,0.16)", backdropFilter: "blur(8px)", border: "1px solid rgba(251,249,239,0.3)" }}
+    >
+      {muted ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(251,249,239,0.92)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="m17 9 4 6M21 9l-4 6" />
+        </svg>
+      ) : (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(251,249,239,0.92)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5 6 9H3v6h3l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+        </svg>
+      )}
+    </button>
+  );
+
+  const Video = (
+    <video
+      ref={videoRef}
+      src="/hero-web.mp4"
+      poster="/hero-poster.jpg"
+      muted
+      loop
+      playsInline
+      preload="none"
+      className="absolute inset-0 h-full w-full object-cover"
+    />
+  );
+
   if (useSimple) {
     return (
-      <section className="relative z-10 flex flex-col gap-4 px-6 py-16 md:pl-24">
-        {WORK.map((w) => (
-          <div key={w.title} className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${w.color} bg-[#141210] p-8`} style={{ minHeight: 220 }}>
-            <div className="font-mono text-[11px] uppercase tracking-[0.2em]" style={{ color: "rgba(251,249,239,0.55)" }}>{w.tag} — {w.year}</div>
-            <div className="mt-2 max-w-md font-display text-xl font-bold text-white">{w.title}</div>
-          </div>
-        ))}
+      <section className="relative z-10 px-6 py-16 md:pl-24">
+        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-[#141210] shadow-2xl" style={{ aspectRatio: "21 / 9" }}>
+          {Video}
+          {SoundButton}
+        </div>
       </section>
     );
   }
@@ -301,23 +354,8 @@ function ShowreelPin() {
     <section ref={wrapRef} className="relative z-10" style={{ height: "380vh" }}>
       <div className="sticky top-0 flex h-screen w-full items-center justify-center overflow-hidden">
         <div ref={cardRef} className="relative overflow-hidden bg-[#141210] shadow-2xl" style={{ width: "74vw", height: "46vh", borderRadius: 28 }}>
-          {WORK.map((w, i) => (
-            <div key={w.title}
-              className={`absolute inset-0 flex items-end bg-gradient-to-br ${w.color} p-10 md:p-14 transition-opacity duration-700 ease-out`}
-              style={{ opacity: activeIndex === i ? 1 : 0 }}
-            >
-              {/* Placeholder frame — swap this gradient block for a <video> element per project */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: "rgba(251,249,239,0.14)", backdropFilter: "blur(6px)" }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(251,249,239,0.85)"><path d="M8 5v14l11-7z" /></svg>
-                </span>
-              </div>
-              <div className="relative">
-                <div className="font-mono text-[11px] uppercase tracking-[0.2em]" style={{ color: "rgba(251,249,239,0.55)" }}>{w.tag} — {w.year}</div>
-                <div className="mt-2 max-w-lg font-display font-bold text-white" style={{ fontSize: "clamp(1.5rem,3vw,2.75rem)" }}>{w.title}</div>
-              </div>
-            </div>
-          ))}
+          {Video}
+          {SoundButton}
         </div>
       </div>
     </section>
@@ -327,13 +365,6 @@ function ShowreelPin() {
 /* ─────────────────────────────────────────────────────
    FEATURED WORK — centered intro + scroll cue, alternating full/split case-study feed
 ───────────────────────────────────────────────────── */
-function PhoneGlyph() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3.9c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1L6.6 10.8Z" />
-    </svg>
-  );
-}
 
 function FeaturedWork() {
   const wrapRef = useRef<HTMLElement>(null);
@@ -349,7 +380,7 @@ function FeaturedWork() {
   }, []);
 
   return (
-    <section id="work" ref={wrapRef} className="relative z-10 overflow-hidden py-28">
+    <section id="work" ref={wrapRef} className="relative z-10 overflow-hidden py-16 md:py-28">
       <div
         ref={introRef}
         className="mx-auto max-w-3xl px-6 text-center"
@@ -360,45 +391,45 @@ function FeaturedWork() {
         }}
       >
         <SectionLabel number="01" label="Featured work" center />
-        <h2 className="font-display font-black leading-[0.9] tracking-tight" style={{ fontSize: "clamp(3rem,9vw,7rem)" }}>
+        <h2 className="font-display font-black leading-[0.9] tracking-tight" style={{ fontSize: "clamp(3.6rem,11vw,7rem)" }}>
           Featured<br /><span style={{ color: "var(--grey)" }}>work</span>
         </h2>
         <div className="mx-auto my-8 flex h-9 w-9 items-center justify-center rounded-full" style={{ border: "1px solid rgba(20,18,16,0.15)", animation: "floatY 2.4s ease-in-out infinite" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(20,18,16,0.5)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v16M6 14l6 6 6-6" /></svg>
         </div>
-        <p className="mx-auto max-w-lg text-base leading-relaxed" style={{ color: "rgba(20,18,16,0.5)" }}>
+        <p className="mx-auto max-w-lg text-[17px] leading-relaxed md:text-base" style={{ color: "rgba(20,18,16,0.5)" }}>
           Every build here earns its keep — measured in hours saved, revenue moved, and deals closed, not just how it looks in a screenshot.
         </p>
       </div>
 
-      <div className="mx-auto mt-20 max-w-7xl px-6 md:pl-24">
+      <div className="mx-auto mt-12 max-w-7xl px-6 md:mt-20 md:pl-24">
         <WorkGrid />
       </div>
 
       {/* Section-local floating CTA — visible only while this section is in view */}
       <div
-        className="fixed bottom-6 left-1/2 z-[997] flex -translate-x-1/2 items-center gap-2 rounded-full"
+        className="fixed bottom-6 left-1/2 z-[997] w-[calc(100vw-1.5rem)] max-w-[540px] rounded-full sm:w-auto"
         style={{
-          background: "rgba(108,102,96,0.55)",
+          background: "rgba(96,91,86,0.5)",
           backdropFilter: "blur(24px)",
-          boxShadow: "0 4px 32px rgba(0,0,0,0.16)",
-          padding: 5,
+          WebkitBackdropFilter: "blur(24px)",
+          boxShadow: "0 8px 40px rgba(20,18,16,0.22)",
+          padding: 6,
           opacity: dockVisible ? 1 : 0,
           transform: `translate(-50%, ${dockVisible ? 0 : 12}px)`,
           pointerEvents: dockVisible ? "auto" : "none",
           transition: "opacity var(--dur-slow) var(--ease-flyout), transform var(--dur-slow) var(--ease-flyout)",
         }}
       >
-        <a href="#contact" className="flex items-center gap-2">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-black"
-            style={{ background: "linear-gradient(135deg,#0a90d8,#40d8ff)", color: "#03070e" }}>
-            TP
-          </span>
-          <span className="whitespace-nowrap pr-1 text-xs font-bold" style={{ color: "var(--bg)" }}>
+        <a href="#contact" onClick={() => track("book_call_click", { location: "floating_dock" })} className="flex items-center justify-between gap-3 sm:gap-8">
+          <span className="truncate pl-4 text-[13px] sm:pl-6 sm:text-[15px]" style={{ color: "rgba(251,249,239,0.92)" }}>
             Book a free discovery call
           </span>
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "var(--accent)", color: "#03070e" }}>
-            <PhoneGlyph />
+          <span
+            className="flex-shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-[11px] font-black uppercase tracking-tight transition-transform hover:scale-[1.03] sm:px-7 sm:py-3.5 sm:text-[13px]"
+            style={{ background: "#ffffff", color: "var(--ink)" }}
+          >
+            Book a call
           </span>
         </a>
       </div>
@@ -581,7 +612,7 @@ function Testimonials() {
   }, [narrow]);
 
   return (
-    <section id="testimonials" ref={sectionRef} className="relative z-10 py-28 overflow-hidden">
+    <section id="testimonials" ref={sectionRef} className="relative z-10 overflow-hidden py-16 md:py-28">
       <div className="mx-auto max-w-7xl md:px-6 md:pl-24">
         <div
           ref={headRef}
@@ -593,7 +624,7 @@ function Testimonials() {
           }}
         >
           <SectionLabel number="06" label="Client stories" />
-          <h2 className="mb-14 font-display font-black leading-[0.95] tracking-tight sm:mb-20" style={{ fontSize: "clamp(2.8rem,6.5vw,5.6rem)" }}>
+          <h2 className="mb-10 font-display font-black leading-[0.95] tracking-tight sm:mb-20" style={{ fontSize: "clamp(3.3rem,8.5vw,5.6rem)" }}>
             <span style={{ color: "var(--ink)" }}>Trusted by</span><br />
             <span style={{ color: "var(--grey)" }}>+{TESTIMONIALS.length * 8} founders</span>
           </h2>
@@ -634,6 +665,59 @@ function Testimonials() {
             ))}
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+
+/* ─────────────────────────────────────────────────────
+   FAQ — visible answers to the questions buyers search for,
+   mirrored into FAQPage structured data for rich results.
+───────────────────────────────────────────────────── */
+function FaqSection() {
+  const [headRef, headVis] = useReveal(0.2);
+  return (
+    <section id="faq" className="relative z-10 px-6 py-16 md:py-28 md:pl-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd()) }}
+      />
+      <div className="mx-auto max-w-5xl">
+        <div
+          ref={headRef}
+          style={{
+            opacity: headVis ? 1 : 0,
+            transform: headVis ? "none" : "translateY(24px)",
+            transition: "opacity 0.7s, transform 0.7s",
+          }}
+        >
+          <SectionLabel number="07" label="Questions" />
+          <h2 className="mb-10 font-display font-black leading-[0.95] tracking-tight sm:mb-16" style={{ fontSize: "clamp(2.6rem,7vw,4.6rem)" }}>
+            Frequently asked<br /><span style={{ color: "var(--grey)" }}>questions</span>
+          </h2>
+        </div>
+
+        <dl className="divide-y" style={{ borderColor: "rgba(20,18,16,0.12)" }}>
+          {FAQS.map((f) => (
+            <div key={f.q} className="border-t py-7 md:grid md:grid-cols-[1fr_1.35fr] md:gap-12" style={{ borderColor: "rgba(20,18,16,0.12)" }}>
+              <dt className="font-display text-xl font-bold leading-snug tracking-tight md:text-2xl">{f.q}</dt>
+              <dd className="mt-3 text-[17px] leading-relaxed md:mt-0 md:text-base" style={{ color: "rgba(20,18,16,0.62)" }}>{f.a}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <p className="mt-12 text-[17px] leading-relaxed md:text-base" style={{ color: "rgba(20,18,16,0.62)" }}>
+          Still deciding?{" "}
+          <a href="#contact" onClick={() => track("book_call_click", { location: "faq" })} className="font-bold underline underline-offset-4" style={{ color: "var(--ink)" }}>
+            Book a free discovery call
+          </a>{" "}
+          — or email{" "}
+          <a href={`mailto:${COMPANY.email}`} className="font-bold underline underline-offset-4" style={{ color: "var(--ink)" }}>
+            {COMPANY.email}
+          </a>
+          .
+        </p>
       </div>
     </section>
   );

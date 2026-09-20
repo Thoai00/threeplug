@@ -309,6 +309,8 @@ html.lenis, html.lenis body {
   width: min(90%, 1040px);
   height: min(68vh, 580px);
   perspective: 100px;
+}
+.stack-frame--cursorless {
   cursor: none;
 }
 .stack-card {

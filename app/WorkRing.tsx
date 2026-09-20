@@ -107,7 +107,7 @@ export default function WorkRing() {
   if (useSimple) {
     return (
       <section data-theme="dark" className="relative overflow-hidden py-24 text-center" style={{ background: "var(--ink)" }}>
-        <a href="#work" className="font-display font-black leading-[0.85] tracking-tight" style={{ fontSize: "clamp(2.4rem, 9vw, 4.5rem)", color: "var(--grey)" }}>
+        <a href="#work" className="font-display font-black leading-[0.85] tracking-tight" style={{ fontSize: "clamp(3rem, 11vw, 4.5rem)", color: "var(--grey)" }}>
           See more<br />work
         </a>
         <StaticRingGrid />
@@ -122,7 +122,7 @@ export default function WorkRing() {
           href="#work"
           className="relative z-10 select-none text-center font-display font-black leading-[0.8] tracking-tight"
           style={{
-            fontSize: "clamp(2.6rem, 7vw, 5.75rem)",
+            fontSize: "clamp(3.2rem, 9.5vw, 5.75rem)",
             color: hovered ? "var(--bg)" : "var(--grey)",
             transition: "color 0.64s var(--ease-flyout)",
           }}

@@ -146,7 +146,7 @@ export default function HeroCarousel() {
 
   const Heading = (
     <div className="pointer-events-none relative z-20 px-6 text-center">
-      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(2.5rem, 7vw, 6rem)", color: "var(--ink)" }}>
+      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(3.1rem, 9vw, 6rem)", color: "var(--ink)" }}>
         Small team,
       </h2>
     </div>

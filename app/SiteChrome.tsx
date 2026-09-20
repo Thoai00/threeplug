@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import MobileNav from "./MobileNav";
+import { track } from "./analytics";
 
 /* ─── SCROLL PROGRESS HOOK ─── */
 function useScrollProgress() {
@@ -51,6 +52,7 @@ function TopBar({ dark }: { dark: boolean }) {
           style={{ filter: dark ? "brightness(0) invert(1)" : "none", transition: "filter 0.4s ease" }} />
       </Link>
       <Link href="/#contact"
+        onClick={() => track("book_call_click", { location: "header" })}
         className="fixed right-6 top-6 z-[998] hidden rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-wide transition-transform hover:scale-105 md:block"
         style={{ background: dark ? "#fbf9ef" : "var(--ink)", color: dark ? "var(--ink)" : "var(--bg)", transition: "background-color 0.4s ease, color 0.4s ease" }}>
         Book a call now
