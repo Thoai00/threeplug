@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
 
   /* Remove X-Powered-By header */
   poweredByHeader: false,
+
+  /* Route changes run through React's <ViewTransition> (see
+     app/fx/PageTransition.tsx). Browsers without the View Transitions API
+     simply navigate without the animation. */
+  experimental: {
+    viewTransition: true,
+  },
 };
 
 export default nextConfig;

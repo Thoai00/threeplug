@@ -3,7 +3,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AutoVideo from "../../AutoVideo";
-import SiteChrome from "../../SiteChrome";
+import SiteFooter from "../../SiteFooter";
+import Magnetic from "../../fx/Magnetic";
+import PageTransition from "../../fx/PageTransition";
+import { ArrowRight, ArrowUpRight } from "../../fx/icons";
 import { CASES, getCase } from "../cases";
 import { WORK } from "../projects";
 import { COMPANY, SITE_URL, breadcrumbJsonLd } from "../../seo";
@@ -37,10 +40,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-const LIGHT_TEXT = "#fbf9ef";
-const MUTED = "rgba(20,18,16,0.62)";
-const HAIRLINE = "rgba(20,18,16,0.1)";
-
 export default async function CasePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const c = getCase(slug);
@@ -49,7 +48,7 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
   const project = WORK.find((w) => w.slug === c.slug);
   const next = CASES[(CASES.findIndex((x) => x.slug === c.slug) + 1) % CASES.length];
   // long names overflow at 16vw, so scale the cap with the character count
-  const nameVw = Math.min(16, Math.round(150 / c.name.length));
+  const nameVw = Math.min(17, Math.round(150 / c.name.length));
 
   const meta = [
     { k: "Year", v: c.year },
@@ -58,185 +57,210 @@ export default async function CasePage({ params }: { params: Promise<{ slug: str
   ];
 
   return (
-    <main className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CreativeWork",
-            name: c.name,
-            headline: `${c.name} — ${c.services}`,
-            description: c.tagline,
-            url: `${SITE_URL}/work/${c.slug}`,
-            about: c.industry,
-            dateCreated: c.year,
-            inLanguage: "en",
-            creator: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: COMPANY.legalName },
-            ...(c.video ? { video: { "@type": "VideoObject", name: `${c.name} walkthrough`, description: c.tagline, thumbnailUrl: `${SITE_URL}${c.video.poster}`, contentUrl: `${SITE_URL}${c.video.src}`, uploadDate: `${c.year}-01-01` } } : {}),
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(breadcrumbJsonLd([
-            { name: "Home", path: "/" },
-            { name: "Work", path: "/work" },
-            { name: c.name, path: `/work/${c.slug}` },
-          ])),
-        }}
-      />
-      <SiteChrome />
-
-      {/* Upper half — dark */}
-      <section data-theme="dark" className="flex min-h-screen flex-col items-center justify-center px-6 pb-14 pt-28 text-center md:pb-20 md:pt-36" style={{ background: `linear-gradient(168deg, ${c.hero[0]} 0%, ${c.hero[1]} 78%)`, color: LIGHT_TEXT }}>
-        <Reveal y={12}>
-          <nav className="font-mono text-xs" style={{ color: "rgba(251,249,239,0.35)" }} aria-label="Breadcrumb">
-            <Link href="/" className="transition-colors hover:text-white">Home</Link>
-            <span className="mx-3">›</span>
-            <Link href="/#work" className="transition-colors hover:text-white">Work</Link>
-            <span className="mx-3">›</span>
-            <span style={{ color: "rgba(251,249,239,0.7)" }}>{c.name}</span>
-          </nav>
-        </Reveal>
-
-        <RevealWords
-          as="h1"
-          by="char"
-          text={c.name}
-          stagger={0.045}
-          delay={0.15}
-          className="mt-8 font-display font-black leading-[0.9] tracking-tight"
-          style={{ fontSize: `clamp(3rem, ${nameVw}vw, 13rem)` }}
+    // keyed by slug so "Next case" (same route, new params) also transitions
+    <PageTransition key={c.slug}>
+      <div className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CreativeWork",
+              name: c.name,
+              headline: `${c.name} — ${c.services}`,
+              description: c.tagline,
+              url: `${SITE_URL}/work/${c.slug}`,
+              about: c.industry,
+              dateCreated: c.year,
+              inLanguage: "en",
+              creator: { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: COMPANY.legalName },
+              ...(c.video ? { video: { "@type": "VideoObject", name: `${c.name} walkthrough`, description: c.tagline, thumbnailUrl: `${SITE_URL}${c.video.poster}`, contentUrl: `${SITE_URL}${c.video.src}`, uploadDate: `${c.year}-01-01` } } : {}),
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbJsonLd([
+              { name: "Home", path: "/" },
+              { name: "Work", path: "/work" },
+              { name: c.name, path: `/work/${c.slug}` },
+            ])),
+          }}
         />
 
-        <dl className="mt-10 flex flex-wrap justify-center gap-x-16 gap-y-6">
-          {meta.map((m, i) => (
-            <Reveal key={m.k} delay={0.55 + i * 0.1} y={20}>
-              <dt className="font-mono text-[11px] uppercase tracking-[0.2em]" style={{ color: "rgba(251,249,239,0.45)" }}>{m.k}</dt>
-              <dd className="mt-1.5 text-base">{m.v}</dd>
-            </Reveal>
-          ))}
-        </dl>
-
-        <RevealWords
-          as="p"
-          text={c.tagline}
-          stagger={0.025}
-          delay={0.8}
-          className="mx-auto mt-auto max-w-3xl pt-14 text-[26px] leading-snug md:pt-20 md:text-4xl"
-        />
-        <Reveal delay={1.3} y={10}>
-          <div className="mt-10 font-mono text-xs" style={{ color: "rgba(251,249,239,0.3)" }}>(Scroll down)</div>
-        </Reveal>
-      </section>
-
-      {/* Cover straddles the dark → light seam: the recording where there is one,
-          the project's own colour otherwise */}
-      <div className="relative">
-        <div data-theme="dark" className="absolute inset-x-0 top-0 h-1/2" style={{ background: c.hero[1] }} />
-        <div className="relative mx-auto max-w-7xl px-6 md:pl-32">
-          <RevealMedia className="overflow-hidden rounded-3xl shadow-2xl" style={{ aspectRatio: "1280 / 672", background: c.hero[1] }}>
-            {c.video ? (
-              <AutoVideo src={c.video.src} poster={c.video.poster} className="h-full w-full object-cover" />
-            ) : (
-              <div className={`flex h-full w-full items-center justify-center bg-[#141210] bg-gradient-to-br ${project?.color ?? ""}`}>
-                <span className="px-8 text-center font-display font-black uppercase leading-none tracking-tight" style={{ fontSize: "clamp(2rem, 7vw, 6rem)", color: "rgba(251,249,239,0.9)" }}>
-                  {c.name}
-                </span>
-              </div>
-            )}
-          </RevealMedia>
-        </div>
-      </div>
-
-      {/* Lower half — light */}
-      <div className="mx-auto max-w-7xl px-6 pb-10 pt-16 md:pt-24 md:pl-32">
-        {c.sections.map((s, i) => (
-          <section key={s.label} className="border-t py-14 md:py-28" style={{ borderColor: HAIRLINE }}>
-            <div className="grid gap-8 md:grid-cols-[220px_1fr] md:gap-16">
-              <Reveal y={16}>
-                <div className="font-mono text-xs uppercase tracking-[0.2em]" style={{ color: "rgba(20,18,16,0.45)" }}>
-                  {String(i + 1).padStart(2, "0")} — {s.label}
-                </div>
+        <main id="main">
+          {/* Hero — the project's own colour falling into the site's midnight */}
+          <section
+            className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden pb-12 pt-36 md:pb-16 md:pt-44"
+            style={{ background: `linear-gradient(170deg, ${c.hero[0]} 0%, ${c.hero[1]} 58%, var(--bg) 100%)` }}
+          >
+            <div className="hero-grid" aria-hidden="true" />
+            <div className="shell relative">
+              <Reveal y={12}>
+                <nav className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-3" aria-label="Breadcrumb">
+                  <Link href="/" className="link-u transition-colors hover:text-ink">Home</Link>
+                  <span className="mx-3">›</span>
+                  <Link href="/#work" className="link-u transition-colors hover:text-ink">Work</Link>
+                  <span className="mx-3">›</span>
+                  <span className="text-ink-2">{c.name}</span>
+                </nav>
               </Reveal>
-              <div>
-                <RevealWords
-                  text={s.heading}
-                  className="max-w-3xl font-display font-bold leading-[1.05] tracking-tight"
-                  style={{ fontSize: "clamp(2.4rem, 5.2vw, 3.5rem)" }}
-                />
-                <div className="mt-7 max-w-2xl space-y-5 text-[17px] leading-relaxed md:text-lg" style={{ color: MUTED }}>
-                  {s.body.map((p, j) => (
-                    <Reveal key={p} delay={0.15 + j * 0.12}>
-                      <p>{p}</p>
+
+              <RevealWords
+                as="h1"
+                by="char"
+                text={c.name}
+                stagger={0.045}
+                delay={0.15}
+                className="display mt-8"
+                style={{ fontSize: `clamp(3.2rem, ${nameVw}vw, 15rem)`, lineHeight: 0.84 }}
+              />
+
+              <div className="mt-12 grid gap-10 border-t border-line-2 pt-8 md:mt-16 md:grid-cols-12">
+                <dl className="flex flex-wrap gap-x-12 gap-y-6 md:col-span-5">
+                  {meta.map((m, i) => (
+                    <Reveal key={m.k} delay={0.55 + i * 0.1} y={20}>
+                      <dt className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-3">{m.k}</dt>
+                      <dd className="mt-1.5 text-[15px] text-ink">{m.v}</dd>
                     </Reveal>
                   ))}
+                </dl>
+
+                <div className="md:col-span-7">
+                  <RevealWords
+                    as="p"
+                    text={c.tagline}
+                    stagger={0.025}
+                    delay={0.8}
+                    className="display"
+                    style={{ fontSize: "clamp(1.5rem, 3vw, 2.75rem)", lineHeight: 1.08, letterSpacing: "-0.03em" }}
+                  />
+                  <Reveal delay={1.3} y={10}>
+                    <div className="mt-8 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">(Scroll down)</div>
+                  </Reveal>
                 </div>
-
-                {s.palette && (
-                  <ul className="mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-5">
-                    {s.palette.map((p, j) => (
-                      <li key={p.hex}>
-                        <Reveal delay={j * 0.08} y={24} className="overflow-hidden rounded-2xl bg-white/60" style={{ border: `1px solid ${HAIRLINE}` }}>
-                          <div className="h-24" style={{ background: p.hex }} />
-                          <div className="px-3 py-2.5">
-                            <div className="text-sm">{p.name}</div>
-                            <div className="font-mono text-[11px]" style={{ color: "rgba(20,18,16,0.45)" }}>{p.hex}</div>
-                          </div>
-                        </Reveal>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {s.stats && (
-                  <dl className="mt-12 grid max-w-3xl gap-8 sm:grid-cols-3">
-                    {s.stats.map((st, j) => (
-                      <Reveal key={st.label} delay={j * 0.1} className="border-t pt-5" style={{ borderColor: "rgba(20,18,16,0.18)" }}>
-                        <dt>
-                          <CountUp value={st.value} className="font-display font-black leading-none" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }} />
-                        </dt>
-                        <dd className="mt-3 text-sm" style={{ color: MUTED }}>{st.label}</dd>
-                      </Reveal>
-                    ))}
-                  </dl>
-                )}
               </div>
             </div>
-
-            {s.image && (
-              <RevealMedia className="mt-16 overflow-hidden rounded-3xl shadow-xl" style={{ border: `1px solid ${HAIRLINE}` }}>
-                <Image src={s.image.src} alt={s.image.alt} width={s.image.width} height={s.image.height} sizes="(min-width: 1280px) 1150px, 100vw" className="h-auto w-full" />
-              </RevealMedia>
-            )}
           </section>
-        ))}
-      </div>
 
-      {/* Close */}
-      <section className="border-t px-6 py-16 text-center md:py-28 md:pl-32" style={{ borderColor: HAIRLINE }}>
-        <RevealWords
-          text="Have a project like this?"
-          className="mx-auto max-w-4xl font-display font-black leading-[0.95] tracking-tight"
-          style={{ fontSize: "clamp(3rem, 9vw, 6rem)" }}
-        />
-        <Reveal delay={0.3} className="mt-12 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/#contact" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-transform hover:scale-105" style={{ background: "var(--ink)", color: "var(--bg)" }}>
-            Book a call
+          {/* Cover — the recording where there is one, the project's own colour otherwise */}
+          <div className="shell pt-4 md:pt-6">
+            <RevealMedia className="rounded-3xl" style={{ aspectRatio: "1280 / 672", background: c.hero[1], boxShadow: "0 40px 100px -30px rgba(0,0,0,0.8), inset 0 0 0 1px var(--line)" }}>
+              {c.video ? (
+                <AutoVideo src={c.video.src} poster={c.video.poster} className="h-full w-full object-cover" />
+              ) : (
+                <div className={`flex h-full w-full items-center justify-center bg-panel bg-gradient-to-br ${project?.color ?? ""}`}>
+                  <span className="display px-8 text-center uppercase text-ink" style={{ fontSize: "clamp(2rem, 7vw, 6rem)" }}>
+                    {c.name}
+                  </span>
+                </div>
+              )}
+            </RevealMedia>
+          </div>
+
+          {/* Sections */}
+          <div className="shell pb-10 pt-16 md:pt-24">
+            {c.sections.map((s, i) => (
+              <section key={s.label} className="border-t border-line py-14 md:py-28">
+                <div className="grid gap-8 md:grid-cols-12 md:gap-10">
+                  <Reveal y={16} className="md:col-span-3">
+                    <div className="eyebrow md:sticky md:top-32"><b>{String(i + 1).padStart(2, "0")}</b><i />{s.label}</div>
+                  </Reveal>
+                  <div className="md:col-span-9">
+                    <RevealWords
+                      text={s.heading}
+                      className="display max-w-4xl"
+                      style={{ fontSize: "clamp(2.3rem, 5.2vw, 4.25rem)", lineHeight: 0.98 }}
+                    />
+                    <div className="mt-8 max-w-2xl space-y-5 text-[17px] leading-relaxed text-ink-2 md:text-lg">
+                      {s.body.map((p, j) => (
+                        <Reveal key={p} delay={0.15 + j * 0.12}>
+                          <p>{p}</p>
+                        </Reveal>
+                      ))}
+                    </div>
+
+                    {s.palette && (
+                      <ul className="mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-5">
+                        {s.palette.map((p, j) => (
+                          <li key={p.hex}>
+                            <Reveal delay={j * 0.08} y={24} className="card">
+                              <div className="h-24" style={{ background: p.hex }} />
+                              <div className="px-3 py-2.5">
+                                <div className="text-sm text-ink">{p.name}</div>
+                                <div className="font-mono text-[11px] text-ink-3">{p.hex}</div>
+                              </div>
+                            </Reveal>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {s.stats && (
+                      <dl className="mt-12 grid max-w-3xl gap-8 sm:grid-cols-3">
+                        {s.stats.map((st, j) => (
+                          <Reveal key={st.label} delay={j * 0.1} className="border-t border-line-2 pt-5">
+                            <dt>
+                              <CountUp value={st.value} className="display" style={{ fontSize: "clamp(2.75rem, 5.5vw, 4.75rem)" }} />
+                            </dt>
+                            <dd className="mt-3 text-sm text-ink-2">{st.label}</dd>
+                          </Reveal>
+                        ))}
+                      </dl>
+                    )}
+                  </div>
+                </div>
+
+                {s.image && (
+                  <RevealMedia className="group mt-16 rounded-3xl" style={{ boxShadow: "inset 0 0 0 1px var(--line), 0 30px 80px -30px rgba(0,0,0,0.8)" }}>
+                    <Image src={s.image.src} alt={s.image.alt} width={s.image.width} height={s.image.height} sizes="(min-width: 1280px) 1400px, 100vw" className="zoom h-auto w-full" />
+                  </RevealMedia>
+                )}
+              </section>
+            ))}
+          </div>
+
+          {/* Close */}
+          <section className="section border-t border-line text-center">
+            <div className="shell">
+              <RevealWords
+                text="Have a project like this?"
+                className="display mx-auto max-w-5xl"
+                style={{ fontSize: "clamp(3rem, 9vw, 7.5rem)" }}
+              />
+              <Reveal delay={0.3} className="mt-12 flex flex-wrap items-center justify-center gap-3">
+                <Magnetic>
+                  <Link href="/#contact" className="btn btn-accent">
+                    Book a call
+                    <ArrowUpRight />
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <Link href="/#work" className="btn btn-ghost">← All work</Link>
+                </Magnetic>
+              </Reveal>
+            </div>
+          </section>
+
+          {/* Next case — a full-width band, the whole thing is the link */}
+          <Link href={`/work/${next.slug}`} data-cursor="Next case" className="group block border-t border-line transition-colors duration-700 hover:bg-panel">
+            <div className="shell flex items-end justify-between gap-6 py-12 md:py-20">
+              <div>
+                <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3">Next case</span>
+                <span className="display mt-3 block transition-colors duration-500 group-hover:text-accent-hi" style={{ fontSize: "clamp(2.4rem, 8vw, 7rem)" }}>
+                  {next.name}
+                </span>
+              </div>
+              <span className="mb-2 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full text-ink transition-transform duration-700 group-hover:translate-x-2 md:h-20 md:w-20" style={{ boxShadow: "inset 0 0 0 1px var(--line-2)", transitionTimingFunction: "var(--ease)" }}>
+                <ArrowRight size={22} />
+              </span>
+            </div>
           </Link>
-          <Link href="/#work" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-black/5" style={{ border: "1px solid rgba(20,18,16,0.25)" }}>
-            ← All work
-          </Link>
-        </Reveal>
-        <Reveal delay={0.45} className="mt-14">
-          <Link href={`/work/${next.slug}`} className="group inline-flex flex-col items-center gap-1">
-            <span className="font-mono text-[11px] uppercase tracking-[0.2em]" style={{ color: "rgba(20,18,16,0.45)" }}>Next case</span>
-            <span className="font-display text-2xl font-black tracking-tight transition-transform group-hover:translate-x-1 md:text-3xl">{next.name} →</span>
-          </Link>
-        </Reveal>
-      </section>
-    </main>
+        </main>
+
+        <SiteFooter />
+      </div>
+    </PageTransition>
   );
 }

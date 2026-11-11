@@ -1,44 +1,32 @@
 "use client";
 
 /**
- * ShipDeck — "What we ship. / Our ways to move fast" pinned 3D flip-deck.
+ * ShipDeck — "What we ship. / Our ways to move fast", as a horizontal
+ * scroll showcase.
  *
- * An 800vh .stack-wrapper holds a .stack-list pinned to the viewport via
- * GSAP ScrollTrigger (pin + scrub, start:"top top" end:"bottom bottom" on
- * the wrapper). One scrubbed GSAP timeline drives all 8 cards: at each of
- * the 7 hand-off points the active (front) card hinges back on its bottom
- * edge — rotateX(0 -> 15deg), translateY(0 -> -850px), fading out — while
- * the next card in the stack flattens from its peeking depth position
- * (translateZ(-30px * depth), translateY(40px * depth)) up to the front,
- * and every card still further back shifts up one depth level in sync.
- * Scrub ties all of it directly to scroll position, so it reverses cleanly
- * on scroll-up and eases to rest the instant scrolling stops — no manual
- * reverse logic needed, GSAP's scrubbed timeline just plays backwards.
+ * Desktop (≥900px, motion allowed): the section's wrapper is exactly as
+ * tall as the track is wide, the stage inside it is `position: sticky`,
+ * and one scrubbed GSAP tween slides the track sideways as the page
+ * scrolls down — so vertical scrolling reads as travelling along the
+ * deck. Lenis (LenisProvider) supplies the inertia; scrub ties the track
+ * to scroll position, so it reverses cleanly on the way back up. A counter
+ * and progress bar track which card is centred.
  *
- * Lenis (mounted globally in LenisProvider) is what gives the scroll driving
- * that scrub its inertia; ScrollTrigger.update() runs on Lenis's own "scroll"
- * event so the two stay in lockstep without ScrollTrigger installing a
- * second scroll listener of its own.
+ * Phones, tablets and prefers-reduced-motion: no pinning — the same track
+ * is a native, swipeable scroll-snap carousel.
  *
- * The "See our case studies" pill is a fixed-position, pointer-events:none
- * cursor replacement — one shared rAF loop lerps it toward the live mouse
- * position every frame; a single boolean (hovering the pinned stack) drives
- * its opacity. It's independent of the scroll timeline above, so the two
- * never contend for the same rAF tick's writes.
- *
- * On mobile or with prefers-reduced-motion, the pin/GSAP path and the
- * custom cursor are both skipped — the 8 cards render as a plain static
- * stack (see `useSimple`).
- *
- * The 8 cards cover all 11 service categories from the company's service
- * catalog plus DevOps: 01 websites, 02 web + mobile apps, 03 desktop
- * software, 04 ERP + CRM, 05 digital marketing, 06 animation + character,
+ * The 8 cards cover all 12 service categories from the company's service
+ * catalog: 01 websites, 02 web + mobile apps, 03 desktop software,
+ * 04 ERP + CRM, 05 digital marketing, 06 animation + character,
  * 07 3D web + visualisation, 08 DevOps & cloud.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Tilt from "./fx/Tilt";
+import { ArrowRight } from "./fx/icons";
+import { Reveal, RevealLines } from "./work/Motion";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -104,198 +92,145 @@ const DECK_ITEMS = [
 ];
 
 const N = DECK_ITEMS.length;
-const DEPTH_Z = 30;   // translateZ(-DEPTH_Z * depth)
-const DEPTH_Y = 40;   // translateY(DEPTH_Y * depth)
-const EXIT_Y = -850;
-const EXIT_ROTATE_X = 15;
 
-function CardContent({ item }: { item: (typeof DECK_ITEMS)[number] }) {
+function DeckCard({ item }: { item: (typeof DECK_ITEMS)[number] }) {
   return (
-    <>
-      <div className="stack-card__number">({item.n})</div>
-
-      <div className="stack-card__body">
-        <h3 className="stack-card__title">{item.title}</h3>
-        <p className="stack-card__desc">{item.body}</p>
+    <Tilt
+      max={3.5}
+      className="card rail-card group flex flex-col justify-between p-7 md:p-10"
+      style={{
+        // each card keeps its own hue from the catalog, as a corner wash over the shared panel
+        background: `radial-gradient(120% 85% at 100% 0%, ${item.color} 0%, transparent 62%), var(--panel)`,
+      }}
+    >
+      <div className="relative z-[2]">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-hi">({item.n})</span>
+          <span className="display text-ink/10 transition-colors duration-700 group-hover:text-accent-hi/40" style={{ fontSize: "clamp(3rem, 6vw, 5.5rem)", lineHeight: 0.7 }} aria-hidden="true">
+            {item.n}
+          </span>
+        </div>
+        <h3 className="display t-h3 mt-6 max-w-[18ch]">{item.title}</h3>
+        <p className="mt-5 max-w-[52ch] text-[14.5px] leading-relaxed text-ink-2">{item.body}</p>
       </div>
 
-      <div className="stack-card__bottom">
-        <div className="stack-card__meta">
-          <div className="stack-card__meta-label">Built with</div>
-          <div className="stack-card__stack">{item.stack}</div>
-        </div>
-
-        <ul className="stack-card__chips">
+      <div className="relative z-[2] mt-8">
+        <ul className="flex flex-wrap gap-1.5">
           {item.items.map((label) => (
-            <li key={label} className="stack-card__chip">{label}</li>
+            <li key={label} className="rounded-full px-3 py-1.5 text-[11.5px] font-medium text-ink-2" style={{ boxShadow: "inset 0 0 0 1px var(--line-2)", background: "rgba(238,243,249,0.04)" }}>
+              {label}
+            </li>
           ))}
         </ul>
-      </div>
-    </>
-  );
-}
-
-function DeckCursor({ active }: { active: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const mouse = useRef({ x: 0, y: 0 });
-  const pos = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
-    window.addEventListener("mousemove", onMove);
-
-    let raf = 0;
-    const tick = () => {
-      pos.current.x += (mouse.current.x - pos.current.x) * 0.16;
-      pos.current.y += (mouse.current.y - pos.current.y) * 0.16;
-      const el = ref.current;
-      if (el) el.style.transform = `translate3d(${pos.current.x}px, ${pos.current.y}px, 0) translate(-50%, -50%)`;
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    return () => { window.removeEventListener("mousemove", onMove); cancelAnimationFrame(raf); };
-  }, []);
-
-  return (
-    <div ref={ref} className="deck-cursor" style={{ opacity: active ? 1 : 0 }} aria-hidden="true">
-      See our case studies
-    </div>
-  );
-}
-
-function StaticDeck() {
-  return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 px-6 py-8 md:pl-24">
-      {DECK_ITEMS.map((item) => (
-        <div key={item.n} className="relative overflow-hidden rounded-[28px] p-8" style={{ background: item.color, minHeight: 280 }}>
-          <div className="absolute right-8 top-8 font-mono text-sm font-bold text-white/50">({item.n})</div>
-          <h3 className="max-w-md font-display font-black leading-[1.05] text-white" style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>{item.title}</h3>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">{item.body}</p>
-          <ul className="mt-6 flex flex-wrap gap-2">
-            {item.items.map((label) => (
-              <li key={label} className="rounded-full px-3 py-1.5 text-[11px] font-semibold text-white/85" style={{ background: "rgba(255,255,255,0.14)", border: "1px solid rgba(255,255,255,0.2)" }}>
-                {label}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-6 font-mono text-[10px] uppercase tracking-[0.15em] text-white/50">Built with</div>
-          <div className="mt-1 text-xs text-white/75">{item.stack}</div>
+        <div className="mt-6 border-t border-line pt-4">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-3">Built with</div>
+          <div className="mt-1.5 text-[13px] leading-relaxed text-ink">{item.stack}</div>
         </div>
-      ))}
-    </div>
+      </div>
+    </Tilt>
   );
 }
 
 export default function ShipDeck() {
-  const [useSimple, setUseSimple] = useState(false);
-  const [finePointer, setFinePointer] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const stackListRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [cursorActive, setCursorActive] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const countRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // The deck cursor replaces the real cursor, so it only makes sense where
-    // there is one — on touch it would just sit in a corner of the screen.
-    const pointerMq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const update = () => { setUseSimple(reduceMq.matches); setFinePointer(pointerMq.matches); };
-    update();
-    reduceMq.addEventListener("change", update);
-    pointerMq.addEventListener("change", update);
-    return () => {
-      reduceMq.removeEventListener("change", update);
-      pointerMq.removeEventListener("change", update);
-    };
+    const wrap = wrapRef.current;
+    const track = trackRef.current;
+    const bar = barRef.current;
+    const count = countRef.current;
+    if (!wrap || !track || !bar || !count) return;
+
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 900px) and (prefers-reduced-motion: no-preference)", () => {
+      let distance = 0;
+      // Make the wrapper exactly one viewport plus the track's overflow tall,
+      // so one pixel of vertical scroll moves the deck one pixel sideways.
+      const measure = () => {
+        distance = Math.max(0, track.scrollWidth - window.innerWidth);
+        wrap.style.height = `${window.innerHeight + distance}px`;
+      };
+      measure();
+      ScrollTrigger.addEventListener("refreshInit", measure);
+
+      const tween = gsap.to(track, {
+        x: () => -distance,
+        ease: "none",
+        scrollTrigger: {
+          trigger: wrap,
+          start: "top top",
+          end: "bottom bottom",
+          scrub: true,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            bar.style.transform = `scaleX(${self.progress})`;
+            count.textContent = String(Math.min(N, Math.floor(self.progress * N) + 1)).padStart(2, "0");
+          },
+        },
+      });
+
+      return () => {
+        ScrollTrigger.removeEventListener("refreshInit", measure);
+        tween.scrollTrigger?.kill();
+        tween.kill();
+        gsap.set(track, { clearProps: "transform" });
+        wrap.style.height = "";
+      };
+    });
+    return () => mm.revert();
   }, []);
 
-  useEffect(() => {
-    if (useSimple) return;
-
-    const ctx = gsap.context(() => {
-      const cards = cardRefs.current.filter((el): el is HTMLDivElement => el !== null);
-
-      cards.forEach((el, i) => {
-        gsap.set(el, {
-          transformOrigin: "center bottom",
-          rotateX: 0,
-          y: DEPTH_Y * i,
-          z: -DEPTH_Z * i,
-          opacity: 1,
-        });
-      });
-
-      const tl = gsap.timeline({ defaults: { ease: "none", duration: 1 } });
-      for (let act = 0; act < N - 1; act++) {
-        tl.to(cards[act], { rotateX: EXIT_ROTATE_X, y: EXIT_Y, opacity: 0 }, act);
-        for (let i = act + 1; i < N; i++) {
-          const depth = i - act - 1;
-          tl.to(cards[i], { rotateX: 0, y: DEPTH_Y * depth, z: -DEPTH_Z * depth }, act);
-        }
-      }
-
-      ScrollTrigger.create({
-        trigger: wrapperRef.current,
-        start: "top top",
-        end: "bottom bottom",
-        pin: stackListRef.current,
-        scrub: true,
-        animation: tl,
-      });
-    }, wrapperRef);
-
-    // Lenis -> ScrollTrigger sync is wired once, globally, in LenisProvider
-    // (lenis.on("scroll", ScrollTrigger.update) + gsap.ticker driving
-    // lenis.raf), so this pinned timeline just needs its own cleanup here.
-    return () => ctx.revert();
-  }, [useSimple]);
-
-  if (useSimple) {
-    return (
-      <section className="relative z-10 py-16">
-        <DeckHeading />
-        <StaticDeck />
-      </section>
-    );
-  }
-
   return (
-    <section className="relative z-10">
-      <DeckHeading />
-      <div ref={wrapperRef} className="stack-wrapper">
-        <div ref={stackListRef} className="stack-list">
-          <div
-            className={`stack-frame${finePointer ? " stack-frame--cursorless" : ""}`}
-            onMouseEnter={() => setCursorActive(true)}
-            onMouseLeave={() => setCursorActive(false)}
-          >
-            {DECK_ITEMS.map((item, i) => (
-              <div
-                key={item.n}
-                ref={(el) => { cardRefs.current[i] = el; }}
-                className={`stack-card ${i === 0 ? "stack-card--first" : ""}`}
-                style={{ background: item.color, zIndex: N - i }}
-              >
-                <CardContent item={item} />
+    <section id="services" className="relative z-10 border-t border-line" aria-label="Services">
+      <div ref={wrapRef} className="rail-wrap">
+        <div className="rail-sticky py-16 md:py-0">
+          <div ref={trackRef} className="rail-track items-stretch">
+            {/* Lead panel — the section heading travels with the deck */}
+            <div className="rail-item flex w-[min(74vw,560px)] flex-col justify-center pr-2 md:pr-12">
+              <Reveal y={16}>
+                <div className="eyebrow"><b>01</b><i />Services</div>
+              </Reveal>
+              <RevealLines
+                className="display t-h2 mt-6"
+                lines={[
+                  <span key="a" className="muted">What we ship.</span>,
+                  <span key="b">Our ways to</span>,
+                  <span key="c">move fast</span>,
+                ]}
+              />
+              <Reveal delay={0.35} className="mt-9 hidden items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3 md:flex">
+                Keep scrolling <ArrowRight />
+              </Reveal>
+              <Reveal delay={0.35} className="mt-8 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-3 md:hidden">
+                Swipe <ArrowRight />
+              </Reveal>
+            </div>
+
+            {DECK_ITEMS.map((item) => (
+              <div key={item.n} className="rail-item">
+                <DeckCard item={item} />
               </div>
             ))}
+
+            {/* spacer so the last card can reach the centre of the stage */}
+            <div className="rail-item hidden w-[12vw] min-[900px]:block" aria-hidden="true" />
+          </div>
+
+          {/* Position readout — desktop pinned mode only */}
+          <div className="shell mt-8 hidden items-center gap-5 min-[900px]:motion-safe:flex" aria-hidden="true">
+            <span className="font-mono text-[11px] tracking-[0.2em] text-ink">
+              <span ref={countRef}>01</span>
+              <span className="text-ink-3"> / {String(N).padStart(2, "0")}</span>
+            </span>
+            <div className="h-px flex-1" style={{ background: "var(--line)" }}>
+              <div ref={barRef} className="progress-bar h-full w-full" style={{ background: "var(--accent-hi)" }} />
+            </div>
           </div>
         </div>
       </div>
-      {finePointer && <DeckCursor active={cursorActive} />}
     </section>
-  );
-}
-
-function DeckHeading() {
-  return (
-    <div className="relative z-10 mx-auto max-w-2xl px-6 pb-10 text-center md:pb-14">
-      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(2.9rem, 10vw, 5.6rem)", lineHeight: 0.82 }}>
-        <span style={{ color: "var(--grey)" }}>What we ship.</span>
-        <br />
-        <span style={{ color: "var(--ink)" }}>Our ways to move fast</span>
-      </h2>
-    </div>
   );
 }

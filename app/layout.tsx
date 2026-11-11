@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
-import { Geist, IBM_Plex_Mono, Baloo_2 } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, IBM_Plex_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { GoogleTagManager } from "@next/third-parties/google";
 import LenisProvider from "./LenisProvider";
+import SiteChrome from "./SiteChrome";
+import Cursor from "./fx/Cursor";
+import Intro from "./fx/Intro";
 import { COMPANY, PRIMARY_KEYWORDS, SERVICES, SITE_URL, organizationJsonLd } from "./seo";
 
 const geistSans = Geist({
@@ -16,10 +19,13 @@ const geistMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
 });
 
-const displayFont = Baloo_2({
+// Display face: a variable grotesque with optical-size and width axes, so the
+// oversized headlines can run tight and slightly condensed.
+const displayFont = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  axes: ["opsz", "wdth"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -63,7 +69,19 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#05070c",
+  colorScheme: "dark",
+};
+
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+
+// Runs before first paint: a visitor who has already seen the intro this
+// session never gets the curtain again (CSS hides it off this attribute).
+const INTRO_FLAG = `try{if(sessionStorage.getItem("tp-intro")){document.documentElement.dataset.intro="seen";document.documentElement.dataset.ready="1"}}catch(e){}`;
+
+// Without scripts nothing would ever be revealed, so show it all up front.
+const NOSCRIPT_CSS = `.intro{display:none!important}.rv,.mask-in,.g-fade,.mr-a,.mr-b{opacity:1!important;transform:none!important}`;
 
 export default function RootLayout({
   children,
@@ -73,16 +91,28 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${displayFont.variable} h-full antialiased`}
-      style={{ colorScheme: "light" }}
+      style={{ colorScheme: "dark" }}
     >
       {GTM_ID && <GoogleTagManager gtmId={GTM_ID} />}
       <body suppressHydrationWarning className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: INTRO_FLAG }} />
+        <noscript>
+          <style>{NOSCRIPT_CSS}</style>
+        </noscript>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
         />
-        <LenisProvider>{children}</LenisProvider>
+        <a href="#main" className="skip-link">Skip to content</a>
+        <LenisProvider>
+          <Intro />
+          <SiteChrome />
+          {children}
+        </LenisProvider>
+        <Cursor />
+        <div className="grain" aria-hidden="true" />
       </body>
     </html>
   );
