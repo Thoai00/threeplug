@@ -51,7 +51,7 @@ const LAYOUT_BREAKPOINTS = {
 function TornadoCard({ index, width, height, radius }: { index: number; width: number; height: number; radius: number }) {
   return (
     <div
-      className="absolute left-1/2 top-1/2 overflow-hidden rounded-2xl shadow-xl"
+      className="absolute left-1/2 top-1/2 overflow-hidden rounded-2xl"
       style={{
         width,
         height,
@@ -59,6 +59,7 @@ function TornadoCard({ index, width, height, radius }: { index: number; width: n
         marginTop: -height / 2,
         transform: `rotateY(${index * STEP_DEG}deg) translateZ(${radius}px) translateY(${OFFSET_Y[index % OFFSET_Y.length]}px) rotate(${TILT[index % TILT.length]}deg)`,
         background: "linear-gradient(180deg, #012A5E 0%, #0A90D8 45%, var(--bg) 100%)",
+        boxShadow: "0 30px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(238,243,249,0.16)",
       }}
     >
       <Image
@@ -146,7 +147,7 @@ export default function HeroCarousel() {
 
   const Heading = (
     <div className="pointer-events-none relative z-20 px-6 text-center">
-      <h2 className="font-display font-black tracking-tight" style={{ fontSize: "clamp(3.1rem, 9vw, 6rem)", color: "var(--ink)" }}>
+      <h2 className="display" style={{ fontSize: "clamp(3.1rem, 9vw, 6.5rem)", color: "var(--ink)" }}>
         Small team,
       </h2>
     </div>
@@ -155,8 +156,8 @@ export default function HeroCarousel() {
   const WordmarkBg = (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 z-0 flex select-none flex-col items-center justify-center text-center font-display font-black leading-[0.82]"
-      style={{ fontSize: "clamp(6rem, 22vw, 20rem)", color: "#9B9B93" }}
+      className="display pointer-events-none absolute inset-0 z-0 flex select-none flex-col items-center justify-center text-center"
+      style={{ fontSize: "clamp(6rem, 22vw, 20rem)", lineHeight: 0.8, color: "rgba(238,243,249,0.08)" }}
     >
       <span>big</span>
       <span>impact</span>

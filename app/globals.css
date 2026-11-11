@@ -1,46 +1,79 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────
+   THREE PLUG — "LIVE WIRE" DESIGN SYSTEM
+   One identity everywhere: a midnight canvas, the logo's own
+   electric blue as the single accent, oversized grotesque display
+   type, mono labels, hairline rules and a 12-column shell.
+   Motion is transform/opacity only.
+───────────────────────────────────────────────────────────── */
+
 :root {
+  /* Palette — midnight canvas, cool paper ink, logo blue */
+  --bg:        #05070c;
+  --bg-soft:   #080b12;
+  --panel:     #0c111a;
+  --panel-2:   #121a27;
+  --ink:       #eef3f9;
+  --ink-2:     rgba(238, 243, 249, 0.7);
+  --ink-3:     rgba(238, 243, 249, 0.52);
+  --line:      rgba(238, 243, 249, 0.1);
+  --line-2:    rgba(238, 243, 249, 0.22);
+  --grey:      #7d8896;
+
+  --accent:      #0a90d8;
+  --accent-hi:   #40d8ff;
+  --accent-deep: #012a5e;
+  --on-accent:   #03070e;
+
+  /* Logo gradient stops, kept under their original names */
   --brand-light: #0a90d8;
   --brand-mid:   #0070b0;
   --brand-deep:  #012a5e;
   --brand-sky:   #40d8ff;
   --brand-cyan:  #00c0ff;
 
-  /* Paper canvas system — tinted with the logo's blue instead of warm cream */
-  --bg:            #e7f1fa;
-  --bg-d:          #dee8f2;
-  --bg-darker:     #d7e1ea;
-  --gradient-base: #eee1d7;
-  --ink:           #171412;
-  --grey:          #8e827c;
-  --low:           #cabcb5;
-  --surface-card:  #ffffff;
-
-  /* Accents — every tone pulled from the logo's own blue gradient (deep navy -> bright cyan) */
-  --accent:  #0a90d8;
-  --orange:  #00c0ff;
-  --yellow:  #7dd6ff;
-  --purple:  #0a2a54;
-  --red:     #40d8ff;
-
-  /* Scoped to the star-rating widget only — a rating convention, not a site accent */
+  /* Scoped to the star-rating widget only */
   --rating-star: #ffc765;
+
+  /* Type scale — fluid, one ratio */
+  /* capped by viewport height too, so the hero headline, lead and CTAs share one screen */
+  --t-hero: clamp(3.1rem, min(9.4vw, 14vh), 9.75rem);
+  --t-h2:   clamp(2.7rem, 7.4vw, 6.75rem);
+  --t-h3:   clamp(1.65rem, 2.9vw, 2.6rem);
+  --t-lead: clamp(1.06rem, 1.25vw, 1.25rem);
+
+  /* Spacing + grid */
+  --gutter:  clamp(20px, 4vw, 56px);
+  --section: clamp(5.5rem, 12vw, 11rem);
+  --shell:   1520px;
+  --radius:  24px;
 
   /* Motion tokens */
   --dur-fast:   0.15s;
   --dur-base:   0.24s;
   --dur-slow:   0.42s;
-  --dur-reveal: 0.84s;
+  --dur-reveal: 1.1s;
+  --ease:        cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
   --ease-flyout: cubic-bezier(0.36, 0.33, 0, 1);
-  --ease-reveal: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --ease-in:     cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-inout:  cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
+  --color-bg: var(--bg);
+  --color-bg-soft: var(--bg-soft);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-accent: var(--accent);
+  --color-accent-hi: var(--accent-hi);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
@@ -48,6 +81,8 @@
 
 html {
   background: var(--bg);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -55,68 +90,790 @@ body {
   color: var(--ink);
   font-family: var(--font-geist-sans, Arial, sans-serif);
   -webkit-font-smoothing: antialiased;
+  /* clip (not hidden) so position: sticky keeps working in pinned sections */
+  overflow-x: clip;
+}
+
+/* ── One look, always — the visitor's OS light/dark setting never changes
+   the design. The palette above is the only palette; this pins it under
+   both preferences so no browser default (or future `dark:` utility) can
+   restyle the page. ── */
+@media (prefers-color-scheme: light), (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: var(--bg) !important;
+    color: var(--ink) !important;
+    color-scheme: dark;
+  }
 }
 
 ::selection {
-  background: var(--brand-light);
-  color: #03070e;
+  background: var(--accent-hi);
+  color: var(--on-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-hi);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  z-index: 10001;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  transform: translate3d(0, -200%, 0);
+  transition: transform 0.3s var(--ease);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* Film grain — one static layer, never animated */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Layout primitives ── */
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+.section {
+  position: relative;
+  padding-block: var(--section);
+}
+.rule {
+  border-top: 1px solid var(--line);
+}
+
+/* ── Type primitives ── */
+.display {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+  font-variation-settings: "opsz" 96, "wdth" 92;
+}
+.t-hero { font-size: var(--t-hero); line-height: 0.86; }
+.t-h2   { font-size: var(--t-h2); }
+.t-h3   { font-size: var(--t-h3); line-height: 1.02; letter-spacing: -0.035em; }
+.t-lead { font-size: var(--t-lead); line-height: 1.6; color: var(--ink-2); }
+.muted  { color: var(--grey); }
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.eyebrow b {
+  font-weight: 500;
+  color: var(--accent-hi);
+}
+.eyebrow i {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--line-2);
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-hi);
+  box-shadow: 0 0 12px var(--accent-hi);
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+/* ── Buttons — pill with a rising fill ── */
+.btn {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 17px 28px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.45s var(--ease);
+}
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--accent-hi);
+  transform: translate3d(0, 102%, 0);
+  transition: transform 0.55s var(--ease);
+}
+.btn:hover::before,
+.btn:focus-visible::before {
+  transform: none;
+}
+.btn svg {
+  transition: transform 0.45s var(--ease);
+}
+.btn:hover svg,
+.btn:focus-visible svg {
+  transform: translate3d(3px, -3px, 0);
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+.btn-accent {
+  background: var(--accent-hi);
+  color: var(--on-accent);
+}
+.btn-accent::before {
+  background: var(--ink);
+}
+.btn-ghost {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+  color: var(--on-accent);
+}
+.btn-sm {
+  padding: 12px 20px;
+  font-size: 11px;
+}
+
+/* ── Animated link underline ── */
+.link-u {
+  position: relative;
+  display: inline-block;
+}
+.link-u::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.5s var(--ease);
+}
+.link-u:hover::after,
+.link-u:focus-visible::after,
+.link-u[aria-current="true"]::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+/* Underline that is drawn at rest and redraws on hover */
+.link-u--on::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+.link-u--on:hover::after {
+  animation: underline-redraw 0.9s var(--ease);
+}
+
+/* ── Scroll reveals (see app/work/Motion.tsx) ── */
+.rv {
+  opacity: 0;
+  transform: translate3d(0, var(--rv-y, 36px), 0);
+  transition:
+    opacity 0.9s var(--ease) var(--rv-d, 0s),
+    transform var(--dur-reveal) var(--ease) var(--rv-d, 0s);
+}
+.rv.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Split text — every word, letter or line rises out of its own mask */
+.mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.mask-in {
+  display: inline-block;
+  transition: transform 1.15s var(--ease);
+  will-change: transform;
+}
+.line-mask > .mask-in {
+  display: block;
+}
+.sp:not(.is-in) .mask-in {
+  transform: translate3d(0, 112%, 0);
+}
+
+/* Media mask reveal — two counter-moving transforms, no clip-path:
+   the frame rises while its content travels the opposite way, so the
+   picture appears to be uncovered in place and settles from a zoom. */
+.mr {
+  overflow: hidden;
+}
+.mr-a,
+.mr-b {
+  height: 100%;
+  width: 100%;
+  transition: transform 1.35s var(--ease);
+  will-change: transform;
+}
+.mr-a {
+  overflow: hidden;
+  transform: translate3d(0, 101%, 0);
+}
+.mr-b {
+  transform: translate3d(0, -101%, 0) scale(1.22);
+}
+.mr.is-in .mr-a {
+  transform: translate3d(0, 0, 0);
+}
+.mr.is-in .mr-b {
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* Hover zoom for any media inside a .group */
+.zoom {
+  transition: transform 1.4s var(--ease);
+  will-change: transform;
+}
+.group:hover .zoom,
+.group:focus-within .zoom {
+  transform: scale(1.06);
+}
+
+/* ── Page-load gate: hero waits for the intro curtain ── */
+.gate .mask-in {
+  transition-delay: calc(var(--i, 0) * 95ms + 0.05s);
+}
+.gate .g-fade {
+  transition:
+    opacity 1s var(--ease) calc(var(--i, 0) * 95ms + 0.05s),
+    transform 1.1s var(--ease) calc(var(--i, 0) * 95ms + 0.05s);
+}
+html:not([data-ready]) .gate .mask-in {
+  transform: translate3d(0, 112%, 0);
+}
+html:not([data-ready]) .gate .g-fade {
+  opacity: 0;
+  transform: translate3d(0, 24px, 0);
+}
+
+/* ── Intro curtain ── */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--gutter);
+  background: var(--bg);
+  color: var(--ink);
+  transition: transform 1.05s var(--ease-inout);
+  /* If scripts never run, get out of the way on our own */
+  animation: intro-failsafe 0.01s linear 7s forwards;
+}
+.intro.is-done {
+  transform: translate3d(0, -100%, 0);
+}
+html[data-intro="seen"] .intro {
+  display: none;
+}
+.intro-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* ── Cards: lift, glow, tilt ── */
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.lift {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius);
+  transition: transform 0.7s var(--ease);
+}
+.lift::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 40px 90px -30px rgba(10, 144, 216, 0.75);
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .lift:hover {
+    transform: translate3d(0, -8px, 0);
+  }
+  .lift:hover::after {
+    opacity: 1;
+  }
+}
+.tilt {
+  will-change: transform;
+}
+.tilt-glow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(64, 216, 255, 0.2), rgba(64, 216, 255, 0) 62%);
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+.tilt:hover .tilt-glow {
+  opacity: 1;
+}
+
+/* "Discover case" pill on work cards (see work/CaseLabel.tsx) */
+.case-cta {
+  opacity: 0;
+  transform: translate3d(0, -10px, 0) scale(0.92);
+  transition:
+    opacity 0.4s ease,
+    transform 0.6s var(--ease);
+}
+.group:hover .case-cta,
+.group:focus-within .case-cta,
+.case-cta:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .case-cta {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ── Custom cursor ── */
+.cursor,
+.cursor-dot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+}
+.cursor {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+}
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--accent-hi);
+  transition: opacity 0.25s ease;
+}
+.cursor-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(238, 243, 249, 0.6);
+  background: rgba(64, 216, 255, 0);
+  transition:
+    transform 0.5s var(--ease),
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.cursor-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.25s ease,
+    transform 0.45s var(--ease);
+}
+.cursor.is-link .cursor-ring {
+  transform: scale(1.75);
+  background: rgba(64, 216, 255, 0.14);
+  box-shadow: inset 0 0 0 1px var(--accent-hi);
+}
+.cursor.is-label .cursor-ring {
+  transform: scale(2.7);
+  background: var(--accent-hi);
+  box-shadow: none;
+}
+.cursor.is-label .cursor-label {
+  opacity: 1;
+  transform: none;
+}
+.cursor.is-label + .cursor-dot {
+  opacity: 0 !important;
+}
+.cursor.is-down .cursor-ring {
+  transform: scale(0.8);
+}
+
+/* ── Header ── */
+.site-header {
+  transition: transform 0.6s var(--ease);
+}
+.site-header[data-hidden="true"] {
+  transform: translate3d(0, -130%, 0);
+}
+.nav-pill {
+  background: rgba(12, 17, 26, 0.6);
+  box-shadow: inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+.progress-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* ── Full-screen menu ── */
+.menu {
+  transform: translate3d(0, -101%, 0);
+  transition: transform 0.9s var(--ease-inout);
+  visibility: hidden;
+  transition-property: transform, visibility;
+}
+.menu.is-open {
+  transform: none;
+  visibility: visible;
+}
+.menu .mask-in {
+  transform: translate3d(0, 112%, 0);
+  transition-duration: 0.5s;
+}
+.menu.is-open .mask-in {
+  transform: none;
+  transition-duration: 1s;
+  transition-delay: calc(var(--i, 0) * 60ms + 0.35s);
+}
+.menu .g-fade {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.menu.is-open .g-fade {
+  opacity: 1;
+  transition: opacity 0.9s ease 0.75s;
+}
+.menu-link {
+  color: var(--ink-3);
+  transition: color 0.35s ease;
+}
+.menu-link:hover,
+.menu-link:focus-visible {
+  color: var(--ink);
+}
+.menu-link .menu-arrow {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(-18px, 0, 0);
+  transition:
+    opacity 0.35s ease,
+    transform 0.5s var(--ease);
+}
+.menu-link:hover .menu-arrow,
+.menu-link:focus-visible .menu-arrow {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Hero ── */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 55% at 74% 42%, rgba(10, 144, 216, 0.26), transparent 70%),
+    radial-gradient(40% 40% at 18% 90%, rgba(1, 42, 94, 0.5), transparent 70%);
+}
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: radial-gradient(ellipse 75% 70% at 60% 40%, #000, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 60% 40%, #000, transparent 75%);
+  opacity: 0.55;
+}
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+}
+.hero-canvas.is-on {
+  opacity: 1;
+}
+@media (max-width: 899px) {
+  .hero-canvas.is-on {
+    opacity: 0.6;
+  }
+}
+
+/* ── Marquee ── */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ── Showreel — sticky stage, scale scrubbed by ScrollTrigger ── */
+.reel-wrap {
+  position: relative;
+  height: 220vh;
+}
+.reel-sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.reel-card {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 28px;
+  background: #000;
+  transform: scale(0.62);
+  will-change: transform;
+}
+@media (max-width: 639px) {
+  .reel-card {
+    transform: scale(0.8);
+  }
+}
+
+/* ── Services — horizontal showcase (see ShipDeck.tsx) ── */
+.rail-track {
+  display: flex;
+  gap: clamp(16px, 2vw, 28px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding-inline: var(--gutter);
+  padding-block: 8px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+.rail-track::-webkit-scrollbar {
+  display: none;
+}
+.rail-item {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+}
+.rail-card {
+  width: min(84vw, 620px);
+  min-height: min(72vh, 600px);
+}
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .rail-wrap {
+    height: 500vh; /* replaced with the measured distance on mount */
+  }
+  .rail-sticky {
+    position: sticky;
+    top: 0;
+    display: flex;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .rail-track {
+    width: max-content;
+    overflow: visible;
+    scroll-snap-type: none;
+    will-change: transform;
+  }
+  .rail-card {
+    height: min(76vh, 640px);
+    min-height: 0;
+  }
+}
+
+/* ── Fanned testimonial cards — outer layer carries the hover transition,
+   inner layer is written by the scroll tween, so they never fight ── */
+.fan-card {
+  position: relative;
+  transform-origin: center bottom;
+  transition: transform 0.64s var(--ease-flyout);
+  will-change: transform;
+}
+.testimonial-carousel {
+  scrollbar-width: none;
+}
+.testimonial-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Work ring — radial rotating card cluster (see WorkRing.tsx) ── */
+:root {
+  --ring-radius: 330px;
+  --ring-card-w: 190px;
+}
+@media (max-width: 900px) {
+  :root { --ring-radius: 220px; --ring-card-w: 140px; }
+}
+@media (max-width: 560px) {
+  :root { --ring-radius: 150px; --ring-card-w: 104px; }
+}
+.ring-scale-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.8s var(--ease-flyout);
+  will-change: transform;
+}
+.ring-rotate-wrap {
+  position: relative;
+  width: 1px;
+  height: 1px;
+  will-change: transform;
+}
+.ring-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--ring-card-w);
+  aspect-ratio: 3 / 4;
+  transform: translate(-50%, -50%) rotate(calc(var(--i) * 36deg)) translateY(calc(var(--ring-radius) * -1));
+}
+.ring-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  transform: rotate(calc(var(--i) * -36deg));
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55), inset 0 0 0 1px var(--line);
+}
+.ring-art {
+  position: absolute;
+  inset: 0;
+}
+.ring-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(200deg, rgba(255, 255, 255, 0.2), transparent 45%);
 }
 
 /* ── Keyframes ── */
-
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
 }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50%      { opacity: 0.3; }
 }
-
-@keyframes lineGrow {
-  from { transform: scaleX(0); transform-origin: left center; }
-  to   { transform: scaleX(1); transform-origin: left center; }
-}
-
 @keyframes floatY {
-  0%, 100% { transform: translateY(0px);   }
-  50%       { transform: translateY(-10px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -10px, 0); }
 }
-
-@keyframes stickerPop {
-  0%   { transform: scale(0) rotate(-22deg); opacity: 0; }
-  68%  { transform: scale(1.22) rotate(5deg);  opacity: 1; }
-  100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
-}
-
-@keyframes borderPulse {
-  0%, 100% { opacity: 0.35; }
-  50%       { opacity: 0.85; }
-}
-
-@keyframes scanDown {
-  0%   { transform: translateY(-100%); }
-  100% { transform: translateY(300%);  }
-}
-
-@keyframes counterGlow {
-  0%, 100% { text-shadow: 0 0 20px currentColor; }
-  50%       { text-shadow: 0 0 60px currentColor, 0 0 120px currentColor; }
-}
-
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+@keyframes underline-redraw {
+  0%   { transform: scaleX(1); transform-origin: right center; }
+  45%  { transform: scaleX(0); transform-origin: right center; }
+  46%  { transform: scaleX(0); transform-origin: left center; }
+  100% { transform: scaleX(1); transform-origin: left center; }
+}
+@keyframes intro-failsafe {
+  to { visibility: hidden; }
+}
+
+/* ── Page transitions (React <ViewTransition>, see fx/PageTransition.tsx) ── */
+::view-transition-old(.page) {
+  animation: 280ms cubic-bezier(0.4, 0, 1, 1) both vt-out;
+}
+::view-transition-new(.page) {
+  animation: 700ms var(--ease) 200ms both vt-in;
+}
+@keyframes vt-out {
+  to { opacity: 0; transform: translate3d(0, -32px, 0); }
+}
+@keyframes vt-in {
+  from { opacity: 0; transform: translate3d(0, 56px, 0); }
+}
 
 /* ── Lenis smooth scroll ── */
-html.lenis, html.lenis body {
+html.lenis,
+html.lenis body {
   height: auto;
 }
 .lenis.lenis-smooth {
@@ -129,345 +886,51 @@ html.lenis, html.lenis body {
   overflow: hidden;
 }
 
-/* ── Icon rail: dock-style pointer magnetism ── */
-.rail-tile {
-  width: 68px;
-  height: 68px;
-  border-radius: 21.76px;
-  background: rgba(142, 130, 124, 0.14);
-  color: var(--grey);
-  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-}
-.rail-dock.rail-settle .rail-tile {
-  transition:
-    width 0.55s var(--ease-flyout),
-    height 0.55s var(--ease-flyout),
-    border-radius 0.55s var(--ease-flyout),
-    background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-}
-.rail-tile.rail-active {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: 0 14px 30px rgba(20, 18, 16, 0.22);
-}
-.rail-dark .rail-tile {
-  background: rgba(251, 249, 239, 0.08);
-  color: rgba(251, 249, 239, 0.62);
-}
-.rail-dark .rail-tile.rail-active {
-  background: #fbf9ef;
-  color: var(--ink);
-}
-.rail-tile:focus-visible {
-  outline: 2.5px solid var(--accent);
-  outline-offset: 3px;
-}
-.rail-icon-wrap {
-  display: inline-flex;
-  transition: transform 0.55s var(--ease-flyout);
-}
-.rail-dock:not(.rail-settle) .rail-icon-wrap {
-  transition: none;
-}
+/* ── Reduced motion: everything is simply there ── */
 @media (prefers-reduced-motion: reduce) {
-  .rail-tile, .rail-icon-wrap {
-    transition: background-color 0.15s ease, color 0.15s ease !important;
+  .rv,
+  .mask-in,
+  .mr-a,
+  .mr-b,
+  .g-fade,
+  .zoom,
+  .lift,
+  .case-cta {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
-}
-
-/* ── Full-screen menu panel ── */
-.menu-link {
-  display: block;
-  color: rgba(251, 249, 239, 0.55);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-.menu-link:hover {
-  color: var(--bg);
-}
-.menu-panel {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(251, 249, 239, 0.25) transparent;
-}
-
-/* ── Always light — override any OS dark-mode preference ── */
-@media (prefers-color-scheme: dark) {
-  html, body {
-    background: var(--bg)    !important;
-    color: var(--ink)        !important;
+  .intro,
+  .cursor,
+  .cursor-dot {
+    display: none !important;
   }
-}
-
-/* ── Fanned testimonial cards — two-layer transform so hover and scroll
-   never fight: the outer .fan-card carries the hover transition; the
-   inner .fan-card__scroll is written every rAF frame with no transition
-   at all, so it tracks scroll 1:1 with zero added lag. ── */
-.fan-card {
-  position: relative;
-  transform-origin: center bottom;
-  transition: transform 0.64s var(--ease-flyout);
-  will-change: transform;
-}
-.fan-card__scroll {
-  transform: rotate(0deg) translateY(0px);
-}
-
-/* ── Mobile testimonial carousel — side-scrolling with scroll-snap;
-   scrollbar hidden, parallax per-card transform written in page.tsx ── */
-.testimonial-carousel {
-  scrollbar-width: none;
-}
-.testimonial-carousel::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Work ring — radial rotating card cluster (see WorkRing.tsx) ── */
-:root {
-  --ring-radius: 320px;
-  --ring-card-w: 190px;
-}
-@media (max-width: 900px) {
-  :root { --ring-radius: 220px; --ring-card-w: 140px; }
-}
-@media (max-width: 560px) {
-  :root { --ring-radius: 150px; --ring-card-w: 104px; }
-}
-
-.ring-scale-wrap {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.64s var(--ease-flyout);
-  will-change: transform;
-}
-.ring-rotate-wrap {
-  position: relative;
-  width: 1px;
-  height: 1px;
-}
-.ring-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--ring-card-w);
-  aspect-ratio: 3 / 4;
-  transform: translate(-50%, -50%) rotate(calc(var(--i) * 36deg)) translateY(calc(var(--ring-radius) * -1));
-  transition: width 0.64s var(--ease-flyout);
-}
-.ring-card__inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 18px;
-  transform: rotate(calc(var(--i) * -36deg));
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
-}
-.ring-art {
-  position: absolute;
-  inset: 0;
-}
-.ring-art::before {
-  /* keyring loop */
-  content: "";
-  position: absolute;
-  top: -11px;
-  left: 50%;
-  width: 24px;
-  height: 24px;
-  margin-left: -12px;
-  border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.55);
-}
-.ring-art::after {
-  /* glossy highlight */
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(200deg, rgba(255, 255, 255, 0.28), transparent 45%);
-}
-
-/* ── Ship deck — pinned 3D flip-deck (see ShipDeck.tsx) ──
-   GSAP owns every transform below via gsap.set/gsap.to, so these rules
-   intentionally carry no `transition` — a scrubbed timeline writes a new
-   transform every tick and a CSS transition would just fight it. */
-.stack-wrapper {
-  position: relative;
-  height: 800vh;
-}
-.stack-list {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.stack-frame {
-  position: relative;
-  width: min(90%, 1040px);
-  height: min(68vh, 580px);
-  perspective: 100px;
-}
-.stack-frame--cursorless {
-  cursor: none;
-}
-.stack-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border-radius: 1.2em;
-  padding: clamp(20px, 3.4%, 44px);
-  overflow: hidden;
-  color: var(--bg);
-  will-change: transform, opacity;
-}
-.stack-card--first {
-  position: relative;
-}
-
-.stack-card__number {
-  position: absolute;
-  top: 3vw;
-  right: 3.2vw;
-  font-family: var(--font-geist-mono, monospace);
-  font-size: clamp(1.6rem, 4vw, 3rem);
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.22);
-}
-
-.stack-card__body {
-  max-width: 640px;
-}
-.stack-card__title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  line-height: 1.05;
-  font-size: clamp(1.6rem, 3.4vw, 3rem);
-  color: var(--bg);
-}
-.stack-card__desc {
-  margin-top: 18px;
-  max-width: 480px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.stack-card__bottom {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-}
-.stack-card__meta {
-  max-width: 320px;
-}
-.stack-card__meta-label {
-  font-family: var(--font-geist-mono, monospace);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-}
-.stack-card__stack {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.stack-card__chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  max-width: 460px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.stack-card__chip {
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-/* ── Mobile — same pinned/scrubbed animation, resized card ── */
-@media (max-width: 640px) {
-  .stack-frame {
-    width: 92vw;
-    height: min(84vh, 640px);
-    cursor: auto;
+  .marquee-track,
+  .live-dot {
+    animation: none;
   }
-  .stack-card {
-    padding: 22px 20px;
+  .menu {
+    transition: none;
   }
-  .stack-card__number {
-    top: 20px;
-    right: 20px;
-    font-size: 1.5rem;
+  .reel-wrap {
+    height: auto;
+    padding-block: 4rem;
   }
-  .stack-card__title {
-    font-size: 1.5rem;
+  .reel-sticky {
+    position: static;
+    height: auto;
+    padding-inline: var(--gutter);
   }
-  .stack-card__desc {
-    margin-top: 12px;
-    font-size: 13px;
-    line-height: 1.6;
-    max-width: none;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  .reel-card {
+    aspect-ratio: 16 / 9;
+    height: auto;
+    max-width: 1200px;
+    transform: none !important;
   }
-  .stack-card__bottom {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
-  .stack-card__meta {
-    max-width: none;
-  }
-  .stack-card__chips {
-    justify-content: flex-start;
-    max-width: none;
-    gap: 6px;
-  }
-  .stack-card__chip {
-    padding: 5px 11px;
-    font-size: 10.5px;
-  }
-}
-
-/* ── Custom cursor pill for the ship deck ── */
-.deck-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  pointer-events: none;
-  white-space: nowrap;
-  padding: 14px 22px;
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-geist-sans, sans-serif);
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
-  transition: opacity 0.3s ease;
 }

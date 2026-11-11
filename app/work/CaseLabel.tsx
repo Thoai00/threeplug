@@ -1,58 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 import type { Project } from "./projects";
 import { track } from "../analytics";
-
-const EASE = "cubic-bezier(0.36,0.33,0,1)";
+import { ArrowUpRight } from "../fx/icons";
 
 const SIZES = {
-  lg: { inset: 24, h: 64, hOpen: 116, padX: 20, gap: 12, name: "clamp(18px, 4.6vw, 26px)", meta: "10.5px", cta: "16px", ctaInset: [16, 20], radius: 12 },
-  sm: { inset: 10, h: 38, hOpen: 66, padX: 11, gap: 8, name: "13px", meta: "8.5px", cta: "11px", ctaInset: [8, 11], radius: 9 },
+  lg: { inset: "clamp(14px, 2vw, 24px)", h: 56, padX: 18, gap: 12, name: "clamp(15px, 1.5vw, 20px)", meta: "9.5px" },
+  sm: { inset: "10px", h: 38, padX: 11, gap: 8, name: "13px", meta: "8.5px" },
 } as const;
 
-// Dark name tag in the card's top-left corner. Hover/focus on the parent card
-// stretches it to full width and reveals "Discover case". Widths are measured
-// in px so the transition animates in every browser. Also renders a full-card
-// link underneath, so the whole card opens the case page.
+// Sits on top of a work card (the card must be `position: relative` and
+// carry the `group` class):
+//   · a full-card link underneath everything, so the whole card opens the case
+//   · the project's name tag in the top-left corner
+//   · a "Discover case" pill in the top-right that slides in on hover/focus
+//     (always visible on touch screens, where there is no hover)
+// All motion is transform + opacity, driven by CSS (.case-cta in globals.css).
 export default function CaseLabel({ work: w, size = "lg" }: { work: Project; size?: keyof typeof SIZES }) {
   const z = SIZES[size];
-  const boxRef = useRef<HTMLDivElement>(null);
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const [width, setWidth] = useState({ closed: 0, open: 0 });
   const href = `/work/${w.slug}`;
-
-  useEffect(() => {
-    const row = rowRef.current;
-    const card = boxRef.current?.parentElement;
-    if (!row || !card) return;
-
-    const measure = () => {
-      const max = card.clientWidth - z.inset * 2;
-      setWidth({ closed: Math.min(row.offsetWidth, max), open: max });
-    };
-    const ro = new ResizeObserver(measure);
-    ro.observe(card);
-    ro.observe(row);
-
-    const enter = (e: PointerEvent) => { if (e.pointerType === "mouse") setOpen(true); };
-    const leave = () => setOpen(false);
-    const focusIn = () => setOpen(true);
-    const focusOut = (e: FocusEvent) => { if (!card.contains(e.relatedTarget as Node | null)) setOpen(false); };
-    card.addEventListener("pointerenter", enter);
-    card.addEventListener("pointerleave", leave);
-    card.addEventListener("focusin", focusIn);
-    card.addEventListener("focusout", focusOut);
-    return () => {
-      ro.disconnect();
-      card.removeEventListener("pointerenter", enter);
-      card.removeEventListener("pointerleave", leave);
-      card.removeEventListener("focusin", focusIn);
-      card.removeEventListener("focusout", focusOut);
-    };
-  }, [z.inset]);
 
   return (
     <>
@@ -63,54 +30,46 @@ export default function CaseLabel({ work: w, size = "lg" }: { work: Project; siz
         tabIndex={-1}
         onClick={() => track("case_study_open", { project: w.slug, via: "card" })}
       />
+
       <div
-        ref={boxRef}
-        className="absolute z-20 overflow-hidden"
+        className="pointer-events-none absolute z-20 flex items-center rounded-xl"
         style={{
-          pointerEvents: "none",
           top: z.inset,
           left: z.inset,
-          borderRadius: z.radius,
-          width: width.closed ? (open ? width.open : width.closed) : undefined,
-          height: open ? z.hOpen : z.h,
-          background: "#161412",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.22)",
-          transition: `width 0.55s ${EASE}, height 0.55s ${EASE}`,
+          height: z.h,
+          paddingInline: z.padX,
+          gap: z.gap,
+          background: "rgba(5,7,12,0.82)",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.35), inset 0 0 0 1px var(--line-2)",
         }}
       >
-        <div ref={rowRef} className="flex w-max items-center" style={{ height: z.h, paddingInline: z.padX, gap: z.gap }}>
-          <span
-            className="whitespace-nowrap font-display font-black uppercase leading-none tracking-tight"
-            style={{ fontSize: z.name, color: open ? "#ffffff" : "#8e827c", transition: "color 0.4s ease" }}
-          >
-            {w.name}
-          </span>
-          <span
-            className={`${size === "lg" ? "hidden sm:inline" : "inline"} font-mono uppercase leading-[1.25] tracking-[0.14em] text-white/75`}
-            style={{ fontSize: z.meta }}
-          >
-            {w.year}
-            <br />
-            {w.tag}
-          </span>
-        </div>
-        <Link
-          href={href}
-          onClick={() => track("case_study_open", { project: w.slug, via: "discover_case" })}
-          className="absolute font-display font-black uppercase tracking-tight text-white"
-          style={{
-            bottom: z.ctaInset[0],
-            right: z.ctaInset[1],
-            fontSize: z.cta,
-            opacity: open ? 1 : 0,
-            transform: open ? "none" : "translateY(8px)",
-            transition: `opacity 0.35s ease ${open ? "0.15s" : "0s"}, transform 0.45s ${EASE}`,
-            pointerEvents: open ? "auto" : "none",
-          }}
-        >
-          Discover case
-        </Link>
+        <span className="display whitespace-nowrap uppercase text-ink-2 transition-colors duration-500 group-hover:text-ink" style={{ fontSize: z.name, letterSpacing: "-0.02em", lineHeight: 1 }}>
+          {w.name}
+        </span>
+        <span className={`${size === "lg" ? "hidden sm:inline" : "inline"} font-mono uppercase leading-[1.3] tracking-[0.14em] text-ink-3`} style={{ fontSize: z.meta }}>
+          {w.year}
+          <br />
+          {w.tag}
+        </span>
       </div>
+
+      <Link
+        href={href}
+        onClick={() => track("case_study_open", { project: w.slug, via: "discover_case" })}
+        className="case-cta absolute z-20 flex items-center gap-2.5 rounded-full bg-accent-hi font-bold uppercase text-[var(--on-accent)]"
+        style={{
+          top: z.inset,
+          right: z.inset,
+          height: z.h,
+          paddingInline: size === "lg" ? 20 : 12,
+          fontSize: size === "lg" ? 11.5 : 10,
+          letterSpacing: "0.12em",
+        }}
+      >
+        <span className="hidden whitespace-nowrap sm:inline">Discover case</span>
+        <span className="sr-only sm:hidden">Discover case</span>
+        <ArrowUpRight size={size === "lg" ? 16 : 12} />
+      </Link>
     </>
   );
 }

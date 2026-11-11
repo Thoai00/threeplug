@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+// Scroll-reveal primitives shared by every page. Each one only toggles an
+// `is-in` class the first time it scrolls into view; the motion itself is
+// CSS in globals.css (transform + opacity only), which is also where
+// prefers-reduced-motion and the no-script fallback switch it all off.
 
-const EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 const subscribeReduced = (cb: () => void) => {
@@ -13,12 +16,10 @@ const subscribeReduced = (cb: () => void) => {
 const useReducedMotion = () =>
   useSyncExternalStore(subscribeReduced, () => window.matchMedia(REDUCED_QUERY).matches, () => false);
 
-// Fires once when the element scrolls into view. Under reduced motion the
-// callers drop their transitions, so content simply appears in place.
+// Fires once when the element scrolls into view.
 function useInView<T extends Element>(threshold = 0.2) {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
-  const reduced = useReducedMotion();
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -28,44 +29,39 @@ function useInView<T extends Element>(threshold = 0.2) {
     io.observe(el);
     return () => io.disconnect();
   }, [threshold]);
-  return { ref, inView, reduced };
+  return { ref, inView };
 }
 
+const cx = (...parts: (string | false | undefined)[]) => parts.filter(Boolean).join(" ");
+
+/** Fades up into place. */
 export function Reveal({ children, delay = 0, y = 36, className, style }: { children: React.ReactNode; delay?: number; y?: number; className?: string; style?: React.CSSProperties }) {
-  const { ref, inView, reduced } = useInView<HTMLDivElement>(0.15);
+  const { ref, inView } = useInView<HTMLDivElement>(0.15);
   return (
     <div
       ref={ref}
-      className={className}
-      style={{
-        ...style,
-        opacity: inView ? 1 : 0,
-        transform: inView ? "none" : `translateY(${y}px)`,
-        transition: reduced ? "none" : `opacity 0.9s ${EASE} ${delay}s, transform 1.1s ${EASE} ${delay}s`,
-      }}
+      className={cx("rv", inView && "is-in", className)}
+      style={{ ...style, "--rv-d": `${delay}s`, "--rv-y": `${y}px` } as React.CSSProperties}
     >
       {children}
     </div>
   );
 }
 
-// Each word (or letter) rises out of its own mask, staggered.
-export function RevealWords({ text, as: Tag = "h2", by = "word", stagger = 0.06, delay = 0, className, style }: { text: string; as?: "h1" | "h2" | "p"; by?: "word" | "char"; stagger?: number; delay?: number; className?: string; style?: React.CSSProperties }) {
-  const { ref, inView, reduced } = useInView<HTMLHeadingElement>(0.3);
+type TextTag = "h1" | "h2" | "h3" | "p" | "div";
+
+/** Split text: each word (or letter) rises out of its own mask, staggered. */
+export function RevealWords({ text, as: Tag = "h2", by = "word", stagger = 0.06, delay = 0, className, style }: { text: string; as?: TextTag; by?: "word" | "char"; stagger?: number; delay?: number; className?: string; style?: React.CSSProperties }) {
+  const { ref, inView } = useInView<HTMLHeadingElement>(0.3);
   const parts = by === "char" ? [...text] : text.split(" ");
   return (
-    <Tag ref={ref} className={className} style={style} aria-label={text}>
+    <Tag ref={ref as React.Ref<never>} className={cx("sp", inView && "is-in", className)} style={style} aria-label={text}>
       {parts.map((part, i) => (
-        <span key={i} aria-hidden="true" className="inline-block overflow-hidden align-top" style={{ paddingBottom: "0.12em", marginBottom: "-0.12em" }}>
-          <span
-            className="inline-block"
-            style={{
-              transform: inView ? "none" : "translateY(110%)",
-              transition: reduced ? "none" : `transform 1s ${EASE} ${delay + i * stagger}s`,
-            }}
-          >
-            {part === " " ? " " : part}
-            {by === "word" && i < parts.length - 1 ? " " : ""}
+        <span key={i} aria-hidden="true" className="mask">
+          <span className="mask-in" style={{ transitionDelay: `${delay + i * stagger}s` }}>
+            {/* non-breaking: a plain trailing space collapses at the edge of an inline-block */}
+            {part === " " ? "\u00A0" : part}
+            {by === "word" && i < parts.length - 1 ? "\u00A0" : ""}
           </span>
         </span>
       ))}
@@ -73,32 +69,38 @@ export function RevealWords({ text, as: Tag = "h2", by = "word", stagger = 0.06,
   );
 }
 
-// Media opens from a clipped, zoomed frame to full size.
-export function RevealMedia({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-  const { ref, inView, reduced } = useInView<HTMLDivElement>(0.15);
+/** Split lines: each line rises out of its own mask. Lines can hold markup
+ *  (a muted second line, an inline icon), which RevealWords cannot. */
+export function RevealLines({ lines, as: Tag = "h2", stagger = 0.1, delay = 0, className, style }: { lines: React.ReactNode[]; as?: TextTag; stagger?: number; delay?: number; className?: string; style?: React.CSSProperties }) {
+  const { ref, inView } = useInView<HTMLHeadingElement>(0.3);
   return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        ...style,
-        clipPath: inView ? "inset(0% 0% 0% 0% round 24px)" : "inset(10% 6% 10% 6% round 24px)",
-        transition: reduced ? "none" : `clip-path 1.4s ${EASE}`,
-      }}
-    >
-      <div
-        className="h-full w-full"
-        style={{ transform: inView ? "scale(1)" : "scale(1.12)", transition: reduced ? "none" : `transform 1.6s ${EASE}` }}
-      >
-        {children}
+    <Tag ref={ref as React.Ref<never>} className={cx("sp", inView && "is-in", className)} style={style}>
+      {lines.map((line, i) => (
+        <span key={i} className="line-mask">
+          <span className="mask-in" style={{ transitionDelay: `${delay + i * stagger}s` }}>{line}</span>
+        </span>
+      ))}
+    </Tag>
+  );
+}
+
+/** Media is uncovered from the bottom while it settles from a zoom —
+ *  two counter-moving transforms rather than an animated clip-path. */
+export function RevealMedia({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { ref, inView } = useInView<HTMLDivElement>(0.15);
+  return (
+    <div ref={ref} className={cx("mr", inView && "is-in", className)} style={style}>
+      <div className="mr-a">
+        <div className="mr-b">{children}</div>
       </div>
     </div>
   );
 }
 
-// "500+" counts 0 → 500 and keeps the "+" suffix.
+/** "500+" counts 0 → 500 and keeps the "+" suffix. */
 export function CountUp({ value, className, style }: { value: string; className?: string; style?: React.CSSProperties }) {
-  const { ref, inView, reduced } = useInView<HTMLSpanElement>(0.5);
+  const { ref, inView } = useInView<HTMLSpanElement>(0.5);
+  const reduced = useReducedMotion();
   const match = value.match(/^(\d+)(.*)$/);
   const numeric = match !== null;
   const target = match ? Number(match[1]) : 0;
@@ -119,7 +121,7 @@ export function CountUp({ value, className, style }: { value: string; className?
   }, [inView, reduced, target, numeric]);
 
   return (
-    <span ref={ref} className={className} style={style}>
+    <span ref={ref} className={cx("tabular-nums", className)} style={style}>
       {numeric ? `${reduced ? target : n}${suffix}` : value}
     </span>
   );

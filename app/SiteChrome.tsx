@@ -1,391 +1,62 @@
 "use client";
 
+/**
+ * SiteChrome — the fixed frame every route shares, mounted once in the root
+ * layout so it holds still through page transitions:
+ *
+ *   · Header: logo, section links (desktop), "Book a call now", menu toggle.
+ *     Slides away while scrolling down, returns on the first scroll up.
+ *   · A hairline scroll-progress bar across the top edge.
+ *   · The full-screen menu (every breakpoint): large staggered links,
+ *     contact details, legal and social links, local time.
+ */
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import MobileNav from "./MobileNav";
+import HashLink from "./HashLink";
+import Magnetic from "./fx/Magnetic";
+import { ArrowUpRight } from "./fx/icons";
+import { useLenis } from "./LenisProvider";
 import { track } from "./analytics";
+import { COMPANY } from "./seo";
 
-/* ─── SCROLL PROGRESS HOOK ─── */
-function useScrollProgress() {
-  const [progress, setProgress] = useState(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const el = document.documentElement;
-      const total = el.scrollHeight - el.clientHeight;
-      setProgress(total > 0 ? window.scrollY / total : 0);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return progress;
-}
-
-/* ─── RAIL / MENU ICONS ─── */
-function RailGlyph({ name }: { name: "bag" | "building" | "target" | "smiley" | "docs" | "mail" }) {
-  const p = { width: 23, height: 23, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  switch (name) {
-    case "bag":      return <svg {...p}><path d="M6 8h12l-1 12H7L6 8Z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>;
-    case "building": return <svg {...p}><rect x="5" y="3" width="14" height="18" rx="1" /><path d="M9 8h1M14 8h1M9 12h1M14 12h1M9 16h1M14 16h1" /></svg>;
-    case "target":   return <svg {...p}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /></svg>;
-    case "smiley":   return <svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M8.5 14c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2" /><path d="M9 10h.01M15 10h.01" /></svg>;
-    case "docs":     return <svg {...p}><rect x="4" y="4" width="12" height="16" rx="1.2" /><path d="M8 8h4M8 11.5h4M8 15h2" /></svg>;
-    case "mail":     return <svg {...p}><rect x="3.5" y="5.5" width="17" height="13" rx="1.5" /><path d="M4 6.5 12 13l8-6.5" /></svg>;
-  }
-}
-
-const CHROME_LINKS: { id: string; label: string; icon: "bag" | "building" | "target" | "smiley" | "docs" | "mail" }[] = [
-  { id: "work",     label: "Work",     icon: "docs" },
-  { id: "process",  label: "Process",  icon: "building" },
-  { id: "why",      label: "Why us",   icon: "target" },
-  { id: "about",    label: "About us", icon: "smiley" },
-  { id: "contact",  label: "Contact",  icon: "mail" },
+/* ─── NAV DATA ─── */
+export const NAV_LINKS: { id: string; label: string; href?: string }[] = [
+  { id: "work",     label: "Work", href: "/work" },
+  { id: "services", label: "Services" },
+  { id: "process",  label: "Process" },
+  { id: "why",      label: "Why us" },
+  { id: "about",    label: "About us" },
+  { id: "contact",  label: "Contact" },
 ];
 
-/* ─── TOP BAR: logo + book-a-call pill ─── */
-function TopBar({ dark }: { dark: boolean }) {
-  return (
-    <>
-      <Link href="/#top" className="fixed left-4 top-4 z-[998] flex items-center md:left-6 md:top-6">
-        <Image src="/logoh.png" alt="Three Plug — Software Solutions" width={377} height={251} priority
-          className="h-9 w-auto drop-shadow-[0_2px_10px_rgba(20,18,16,0.12)] md:h-16"
-          style={{ filter: dark ? "brightness(0) invert(1)" : "none", transition: "filter 0.4s ease" }} />
-      </Link>
-      <Link href="/#contact"
-        onClick={() => track("book_call_click", { location: "header" })}
-        className="fixed right-6 top-6 z-[998] hidden rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-wide transition-transform hover:scale-105 md:block"
-        style={{ background: dark ? "#fbf9ef" : "var(--ink)", color: dark ? "var(--ink)" : "var(--bg)", transition: "background-color 0.4s ease, color 0.4s ease" }}>
-        Book a call now
-      </Link>
-    </>
-  );
-}
-
-/* ─── SERVICES MEGA-MENU DATA ─── */
+/* ─── SERVICE CATALOG LABELS (footer + menu) ─── */
 export const SERVICE_MEGA = [
-  { label: "Website Development", gradient: "linear-gradient(160deg, #cdeeff, var(--brand-light) 55%, var(--brand-deep))" },
-  { label: "Web Applications",    gradient: "linear-gradient(160deg, var(--brand-light), var(--brand-deep))" },
-  { label: "Mobile Applications", gradient: "linear-gradient(160deg, #0b4a42, #05221d)" },
-  { label: "Desktop Software",    gradient: "linear-gradient(160deg, #3a332e, var(--ink))" },
-  { label: "ERP Solutions",       gradient: "linear-gradient(160deg, #5a2a0f, #2a1206)" },
-  { label: "CRM Solutions",       gradient: "linear-gradient(160deg, #4a1f42, #24101f)" },
-  { label: "Digital Marketing",   gradient: "linear-gradient(160deg, #3a2a5e, #1a1230)" },
-  { label: "Animation & Motion",  gradient: "linear-gradient(160deg, #5c1d2b, #2b0d14)" },
-  { label: "Character Animation", gradient: "linear-gradient(160deg, var(--grey), var(--ink))" },
-  { label: "3D Web Experience",   gradient: "radial-gradient(120% 120% at 30% 80%, var(--brand-sky), var(--brand-mid) 60%, var(--ink))" },
-  { label: "3D Visualisation",    gradient: "linear-gradient(160deg, #07445c, #03202b)" },
-  { label: "DevOps & Cloud",      gradient: "linear-gradient(160deg, #143a2a, #08190f)" },
+  { label: "Website Development" },
+  { label: "Web Applications" },
+  { label: "Mobile Applications" },
+  { label: "Desktop Software" },
+  { label: "ERP Solutions" },
+  { label: "CRM Solutions" },
+  { label: "Digital Marketing" },
+  { label: "Animation & Motion" },
+  { label: "Character Animation" },
+  { label: "3D Web Experience" },
+  { label: "3D Visualisation" },
+  { label: "DevOps & Cloud" },
 ];
 
-/* ─── LEFT ICON RAIL — dock-style pointer magnetism ─── */
-const RAIL_BASE = 68;
-const RAIL_PEAK = 92;
-const RAIL_SPREAD = 76;
-const RAIL_GAP = 14;
-const RAIL_RADIUS_RATIO = 0.32;
-const RAIL_ICON_PEAK_SCALE = 1.25;
-const RAIL_LEFT = 24; // matches left-6
+export const SOCIALS = [
+  { name: "Instagram", short: "ig" },
+  { name: "X", short: "x" },
+  { name: "LinkedIn", short: "in" },
+  { name: "Behance", short: "be" },
+];
 
-function IconRail({ dark }: { dark: boolean }) {
-  const dockRef = useRef<HTMLDivElement>(null);
-  const tileRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const iconRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const pillRef = useRef<HTMLDivElement>(null);
-
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const activeIndexRef = useRef(-1);
-  const restCenters = useRef<number[]>([]);
-  const pointerActive = useRef(false);
-  const pointerY = useRef(0);
-  const rafId = useRef<number | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reducedMotion = useRef(false);
-
-  useEffect(() => {
-    reducedMotion.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const measure = () => {
-      const rect = dockRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      restCenters.current = CHROME_LINKS.map((_, i) => rect.top + i * (RAIL_BASE + RAIL_GAP) + RAIL_BASE / 2);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
-
-  const gauss = (dist: number, base: number, peak: number) => base + (peak - base) * Math.exp(-((dist / RAIL_SPREAD) ** 2));
-
-  const applySizes = (distFn: (i: number) => number) => {
-    let bestIdx = -1;
-    let bestAbs = Infinity;
-    CHROME_LINKS.forEach((_, i) => {
-      const dist = distFn(i);
-      const abs = Math.abs(dist);
-      const size = gauss(dist, RAIL_BASE, RAIL_PEAK);
-      const tile = tileRefs.current[i];
-      if (tile) {
-        tile.style.width = `${size}px`;
-        tile.style.height = `${size}px`;
-        tile.style.borderRadius = `${size * RAIL_RADIUS_RATIO}px`;
-      }
-      const icon = iconRefs.current[i];
-      if (icon) icon.style.transform = `scale(${gauss(dist, 1, RAIL_ICON_PEAK_SCALE)})`;
-      if (abs < bestAbs) { bestAbs = abs; bestIdx = i; }
-    });
-    return bestAbs < RAIL_SPREAD * 1.15 ? bestIdx : -1;
-  };
-
-  const resetSizes = () => {
-    CHROME_LINKS.forEach((_, i) => {
-      const tile = tileRefs.current[i];
-      if (tile) { tile.style.width = ""; tile.style.height = ""; tile.style.borderRadius = ""; }
-      const icon = iconRefs.current[i];
-      if (icon) icon.style.transform = "scale(1)";
-    });
-  };
-
-  const positionFlyout = (idx: number) => {
-    const tile = tileRefs.current[idx];
-    if (!tile) return;
-    const centerY = tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2;
-    if (pillRef.current) pillRef.current.style.top = `${centerY}px`;
-  };
-
-  const setActive = (idx: number) => {
-    if (idx === activeIndexRef.current) {
-      if (idx !== -1) positionFlyout(idx);
-      return;
-    }
-    activeIndexRef.current = idx;
-    setActiveIndex(idx);
-    CHROME_LINKS.forEach((_, i) => tileRefs.current[i]?.classList.toggle("rail-active", i === idx));
-    if (idx !== -1) positionFlyout(idx);
-  };
-
-  const frame = () => {
-    if (pointerActive.current) {
-      const idx = applySizes((i) => pointerY.current - restCenters.current[i]);
-      setActive(idx);
-      rafId.current = requestAnimationFrame(frame);
-    } else {
-      rafId.current = null;
-    }
-  };
-
-  const cancelClose = () => {
-    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
-  };
-  const scheduleClose = () => {
-    closeTimer.current = setTimeout(() => {
-      dockRef.current?.classList.add("rail-settle");
-      resetSizes();
-      setActive(-1);
-    }, 180);
-  };
-
-  const handleDockEnter = () => {
-    if (reducedMotion.current) return;
-    cancelClose();
-    pointerActive.current = true;
-    dockRef.current?.classList.remove("rail-settle");
-    if (!rafId.current) rafId.current = requestAnimationFrame(frame);
-  };
-  const handleDockMove = (e: React.PointerEvent) => {
-    pointerY.current = e.clientY;
-  };
-  const handleDockLeave = () => {
-    pointerActive.current = false;
-    scheduleClose();
-  };
-  const handleFlyoutEnter = () => cancelClose();
-  const handleFlyoutLeave = () => scheduleClose();
-
-  const handleFocus = (i: number) => {
-    cancelClose();
-    if (pointerActive.current || reducedMotion.current) { setActive(i); return; }
-    dockRef.current?.classList.add("rail-settle");
-    applySizes((k) => (k - i) * (RAIL_BASE + RAIL_GAP));
-    setActive(i);
-  };
-  const handleBlur = (e: React.FocusEvent) => {
-    if (pointerActive.current) return;
-    const next = e.relatedTarget as Node | null;
-    if (next && pillRef.current?.contains(next)) return;
-    dockRef.current?.classList.add("rail-settle");
-    resetSizes();
-    setActive(-1);
-  };
-
-  return (
-    <>
-    <div className={`fixed left-6 top-1/2 z-[998] hidden -translate-y-1/2 flex-col md:flex ${dark ? "rail-dark" : ""}`}>
-      <div
-        ref={dockRef}
-        className="rail-dock flex flex-col items-center"
-        style={{ gap: RAIL_GAP, height: CHROME_LINKS.length * RAIL_BASE + (CHROME_LINKS.length - 1) * RAIL_GAP }}
-        onPointerEnter={handleDockEnter}
-        onPointerMove={handleDockMove}
-        onPointerLeave={handleDockLeave}
-      >
-        {CHROME_LINKS.map((l, i) => (
-          <a
-            key={l.id}
-            href={l.id === "work" ? "/work" : `/#${l.id}`}
-            ref={(el) => { tileRefs.current[i] = el; }}
-            onFocus={() => handleFocus(i)}
-            onBlur={handleBlur}
-            aria-haspopup="true"
-            aria-expanded={activeIndex === i}
-            className="rail-tile flex flex-shrink-0 items-center justify-center"
-          >
-            <span ref={(el) => { iconRefs.current[i] = el; }} className="rail-icon-wrap">
-              <RailGlyph name={l.icon} />
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
-
-      {/* Label pill — follows the hovered tile */}
-      <div
-        ref={pillRef}
-        onPointerEnter={handleFlyoutEnter}
-        onPointerLeave={handleFlyoutLeave}
-        className="pointer-events-none fixed z-[998] -translate-y-1/2 whitespace-nowrap rounded-xl px-3.5 py-2.5 text-xs font-bold uppercase tracking-wide"
-        style={{
-          left: RAIL_LEFT + RAIL_PEAK + 14,
-          background: "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(12px)",
-          boxShadow: "0 8px 20px rgba(20,18,16,0.12)",
-          color: "var(--ink)",
-          opacity: activeIndex !== -1 ? 1 : 0,
-          transform: `translateY(-50%) translateX(${activeIndex !== -1 ? 0 : -6}px)`,
-          transition: "opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out)",
-          pointerEvents: activeIndex !== -1 ? "auto" : "none",
-        }}
-      >
-        {activeIndex !== -1 ? CHROME_LINKS[activeIndex].label : ""}
-      </div>
-
-    </>
-  );
-}
-
-/* ─── MENU FLYOUT ─── */
-function MenuFlyout({ dark }: { dark: boolean }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label={open ? "Close menu" : "Open menu"}
-        className="fixed bottom-6 left-6 z-[999] hidden flex-col items-start gap-2 md:flex"
-        style={{ color: dark ? "#fbf9ef" : "var(--ink)", transition: "color 0.4s ease" }}
-      >
-        <span className="relative block h-[11px] w-[52px] overflow-hidden text-[11px] font-black uppercase tracking-[0.15em]">
-          <span
-            className="absolute inset-0 transition-all duration-300 ease-out"
-            style={{ opacity: open ? 0 : 1, transform: open ? "translateY(-10px)" : "translateY(0)" }}
-          >
-            Menu
-          </span>
-          <span
-            className="absolute inset-0 transition-all duration-300 ease-out"
-            style={{ opacity: open ? 1 : 0, transform: open ? "translateY(0)" : "translateY(10px)" }}
-          >
-            Close
-          </span>
-        </span>
-        <span className="flex items-center gap-[5px]">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="rounded-full transition-transform duration-300 ease-out"
-              style={{
-                width: 3.5, height: 3.5, background: "currentColor",
-                transitionDelay: `${i * 45}ms`,
-                transform: open ? "scale(1.7)" : "scale(1)",
-              }}
-            />
-          ))}
-        </span>
-      </button>
-
-      <div className="fixed inset-0 z-[996]" style={{ pointerEvents: open ? "auto" : "none" }}>
-        <div onClick={() => setOpen(false)} className="absolute inset-0" />
-        <div
-          className="menu-panel absolute left-6 right-6 top-24 bottom-24 overflow-y-auto rounded-[28px] md:left-[132px] md:right-6 md:top-[104px] md:bottom-7 md:rounded-[36px]"
-          style={{
-            maxWidth: 620,
-            background: "var(--ink)",
-            color: "var(--bg)",
-            transformOrigin: "left center",
-            transform: open ? "translateX(0) scale(1)" : "translateX(-16px) scale(0.97)",
-            opacity: open ? 1 : 0,
-            pointerEvents: open ? "auto" : "none",
-            transition: `transform var(--dur-slow) var(--ease-flyout), opacity var(--dur-slow) var(--ease-flyout)`,
-            boxShadow: "0 32px 80px rgba(0,0,0,0.35)",
-            padding: "52px 52px 40px",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <nav className="flex flex-col gap-0.5 font-display font-bold" style={{ fontSize: "clamp(2rem, 4.2vw, 3.4rem)", lineHeight: 1.08 }}>
-            {CHROME_LINKS.map((l, i) => (
-              <a key={l.id} href={`/#${l.id}`} onClick={() => setOpen(false)}
-                className="menu-link"
-                style={{
-                  transform: open ? "translateY(0)" : "translateY(14px)",
-                  opacity: open ? 1 : 0,
-                  transition: `transform 0.55s ${open ? i * 0.05 : 0}s var(--ease-out), opacity 0.55s ${open ? i * 0.05 : 0}s var(--ease-out)`,
-                }}>
-                {l.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="mt-10 flex flex-col gap-2.5 font-mono text-xs uppercase tracking-widest" style={{ color: "rgba(251,249,239,0.4)" }}>
-            <a href="#" className="w-fit transition-colors hover:opacity-70">Privacy Policy</a>
-            <a href="#" className="w-fit transition-colors hover:opacity-70">Terms of Service</a>
-          </div>
-
-          <div className="mt-auto flex gap-2.5 pt-10">
-            {["in", "x", "gh", "bh"].map((s) => (
-              <a key={s} href="#"
-                className="flex h-9 w-9 items-center justify-center rounded-lg font-mono text-[10px] font-bold uppercase transition-all hover:scale-110"
-                style={{ border: "1px solid rgba(251,249,239,0.18)", color: "rgba(251,249,239,0.6)" }}>
-                {s}
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── RIGHT-EDGE SCROLL PROGRESS LINE ─── */
-function ScrollProgressLine() {
-  const progress = useScrollProgress();
-  return (
-    <div className="fixed right-6 top-1/2 z-[998] hidden -translate-y-1/2 xl:block" style={{ height: 170, width: 1 }}>
-      <div className="h-full w-full" style={{ background: "rgba(142,130,124,0.35)" }} />
-      <div style={{
-        position: "absolute", left: "50%", top: `${progress * 100}%`,
-        width: 8, height: 8, borderRadius: "50%",
-        background: "var(--accent)", boxShadow: "0 0 10px var(--accent)",
-        transform: "translate(-50%, -50%)",
-        transition: "top 0.05s linear",
-      }} />
-    </div>
-  );
-}
-
-/* ─── LIVE CLOCK + LOCATION ─── */
-function LiveClock() {
+/* ─── LIVE CLOCK ─── */
+export function LiveClock({ className }: { className?: string }) {
   const [time, setTime] = useState<string | null>(null);
   useEffect(() => {
     const update = () => setTime(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
@@ -394,52 +65,258 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <div className="fixed bottom-6 right-6 z-[998] hidden rounded-full px-4 py-2.5 text-right font-mono text-[10px] uppercase tracking-widest md:block"
-      style={{ color: "var(--grey)", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)", boxShadow: "0 8px 24px rgba(20,18,16,0.08)" }}>
-      Remote-first <span style={{ color: "var(--ink)", fontWeight: 600 }}>{time ?? "--:--"}</span>
-    </div>
+    <span className={className}>
+      Remote-first <span className="text-ink">{time ?? "--:--"}</span>
+    </span>
   );
 }
 
-/* ─── DARK-ZONE DETECTION ───
-   Sections marked data-theme="dark" flip the fixed chrome to light-on-dark
-   while they sit under it: top bar at y=48, rail at mid-screen, menu near the bottom. */
-function useDarkZones() {
-  const [dark, setDark] = useState({ top: false, mid: false, bottom: false });
+/* ─── HEADER VISIBILITY + PROGRESS ─── */
+function useHeaderScroll(progressRef: React.RefObject<HTMLDivElement | null>) {
+  const [hidden, setHidden] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
   useEffect(() => {
+    let lastY = window.scrollY;
     let raf = 0;
-    const check = () => {
+    const update = () => {
       raf = 0;
-      const rects = [...document.querySelectorAll<HTMLElement>('[data-theme="dark"]')].map((el) => el.getBoundingClientRect());
-      const at = (y: number) => rects.some((r) => r.top <= y && r.bottom >= y);
-      const h = window.innerHeight;
-      const next = { top: at(48), mid: at(h / 2), bottom: at(h - 40) };
-      setDark((prev) => (prev.top === next.top && prev.mid === next.mid && prev.bottom === next.bottom ? prev : next));
+      const y = window.scrollY;
+      const doc = document.documentElement;
+      const total = doc.scrollHeight - doc.clientHeight;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${total > 0 ? Math.min(1, y / total) : 0})`;
+      setScrolled(y > 24);
+      // 6px of slack so trackpad jitter doesn't flap the header
+      if (y > 160 && y - lastY > 6) setHidden(true);
+      else if (lastY - y > 6 || y <= 160) setHidden(false);
+      lastY = y;
     };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(check); };
-    check();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
-  return dark;
+  }, [progressRef]);
+
+  return { hidden, scrolled };
 }
 
-/* ─── SITE CHROME — shared by every route ─── */
+/* ─── ACTIVE SECTION (home page only) ─── */
+function useActiveSection(pathname: string) {
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const targets = NAV_LINKS
+      .map((l) => document.getElementById(l.id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.find((e) => e.isIntersecting);
+        if (hit) setActive(hit.target.id);
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    );
+    targets.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [pathname]);
+  return pathname === "/" ? active : pathname.startsWith("/work") ? "work" : null;
+}
+
+/* ─── SITE CHROME ─── */
 export default function SiteChrome() {
-  const dark = useDarkZones();
+  const pathname = usePathname();
+  const progressRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+  const { hidden, scrolled } = useHeaderScroll(progressRef);
+  const active = useActiveSection(pathname);
+  const lenis = useLenis();
+
+  // While the menu is open: lock the page, close on Escape, keep Tab inside
+  // the header + menu, and hand focus back to the toggle on close.
+  useEffect(() => {
+    if (!open) return;
+    const toggle = toggleRef.current;
+    // Read the ref at call time: the Lenis instance can be replaced while the menu is open.
+    const resumeScroll = () => lenis?.current?.start();
+    lenis?.current?.stop();
+    const prevOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+
+    const focusables = () =>
+      [headerRef.current, menuRef.current].flatMap((root) =>
+        root ? Array.from(root.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")) : [],
+      ).filter((el) => el.offsetParent !== null);
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setOpen(false); return; }
+      if (e.key !== "Tab") return;
+      const list = focusables();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      const current = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (current === first || !current || !list.includes(current))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (current === last || !current || !list.includes(current))) { e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.documentElement.style.overflow = prevOverflow;
+      resumeScroll();
+      toggle?.focus({ preventScroll: true });
+    };
+  }, [open, lenis]);
+
+  const close = () => setOpen(false);
+
   return (
     <>
-      <TopBar dark={dark.top} />
-      <IconRail dark={dark.mid} />
-      <MobileNav dark={dark.top} />
-      <MenuFlyout dark={dark.bottom} />
-      <ScrollProgressLine />
-      <LiveClock />
+      {/* Scroll progress */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-[999] h-[2px]" aria-hidden="true">
+        <div ref={progressRef} className="progress-bar h-full w-full" style={{ background: "linear-gradient(90deg, var(--accent), var(--accent-hi))" }} />
+      </div>
+
+      <header ref={headerRef} className="site-header fixed inset-x-0 top-0 z-[998]" data-hidden={hidden && !open}>
+        <div className="shell flex items-center justify-between gap-4 py-4 md:py-5">
+          <HashLink id="top" onClick={close} aria-label="Three Plug — home" className="relative z-10 flex items-center">
+            <Image
+              src="/logoh.png"
+              alt="Three Plug — Software Solutions"
+              width={377}
+              height={251}
+              priority
+              className="h-10 w-auto md:h-14"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
+          </HashLink>
+
+          <nav aria-label="Primary" className={`nav-pill hidden items-center gap-1 rounded-full p-1.5 lg:flex ${open ? "invisible" : ""}`}>
+            {NAV_LINKS.map((l) => {
+              const cls = "rounded-full px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300 hover:bg-white/[0.07] hover:text-ink";
+              const state = active === l.id ? "bg-white/[0.09] text-ink" : "text-ink-2";
+              return l.href ? (
+                <Link key={l.id} href={l.href} className={`${cls} ${state}`} aria-current={active === l.id ? "page" : undefined}>{l.label}</Link>
+              ) : (
+                <HashLink key={l.id} id={l.id} className={`${cls} ${state}`} aria-current={active === l.id ? "true" : undefined}>{l.label}</HashLink>
+              );
+            })}
+          </nav>
+
+          <div className="relative z-10 flex items-center gap-2.5">
+            <Magnetic className="hidden sm:inline-block">
+              <HashLink
+                id="contact"
+                onClick={() => { close(); track("book_call_click", { location: "header" }); }}
+                className="btn btn-primary btn-sm"
+              >
+                Book a call now
+                <ArrowUpRight size={13} />
+              </HashLink>
+            </Magnetic>
+
+            <Magnetic strength={0.25}>
+              <button
+                ref={toggleRef}
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-controls="site-menu"
+                aria-label={open ? "Close menu" : "Open menu"}
+                className={`nav-pill flex h-[42px] items-center gap-3 rounded-full pl-5 pr-4 text-[11px] font-bold uppercase tracking-[0.14em] text-ink ${scrolled || open ? "" : "lg:bg-transparent"}`}
+              >
+                <span className="relative block h-[14px] w-[44px] overflow-hidden text-left leading-[14px]">
+                  <span className="absolute inset-0 transition-transform duration-500" style={{ transform: open ? "translate3d(0,-110%,0)" : "none", transitionTimingFunction: "var(--ease)" }}>Menu</span>
+                  <span className="absolute inset-0 transition-transform duration-500" style={{ transform: open ? "none" : "translate3d(0,110%,0)", transitionTimingFunction: "var(--ease)" }}>Close</span>
+                </span>
+                <span className="relative block h-3 w-4" aria-hidden="true">
+                  <span className="absolute left-0 top-1/2 block h-[1.5px] w-4 bg-current transition-transform duration-500" style={{ transform: open ? "rotate(45deg)" : "translate3d(0,-3.5px,0)", transitionTimingFunction: "var(--ease)" }} />
+                  <span className="absolute left-0 top-1/2 block h-[1.5px] w-4 bg-current transition-transform duration-500" style={{ transform: open ? "rotate(-45deg)" : "translate3d(0,3.5px,0)", transitionTimingFunction: "var(--ease)" }} />
+                </span>
+              </button>
+            </Magnetic>
+          </div>
+        </div>
+      </header>
+
+      {/* Full-screen menu */}
+      <div
+        id="site-menu"
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Site menu"
+        inert={!open}
+        data-lenis-prevent
+        className={`menu fixed inset-0 z-[997] overflow-y-auto ${open ? "is-open" : ""}`}
+        style={{ background: "var(--panel)" }}
+      >
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true" style={{ background: "radial-gradient(55% 60% at 85% 20%, rgba(10,144,216,0.28), transparent 70%), radial-gradient(40% 45% at 5% 100%, rgba(1,42,94,0.6), transparent 70%)" }} />
+
+        <div className="shell relative flex min-h-full flex-col gap-10 pb-8 pt-24 md:pt-28">
+          <nav aria-label="Menu" className="display flex flex-col" style={{ fontSize: "clamp(2.5rem, min(8.4vw, 10.5vh), 7rem)", lineHeight: 0.98 }}>
+            {NAV_LINKS.map((l, i) => {
+              const inner = (
+                <>
+                  <span className="mr-4 align-top font-mono text-[11px] font-medium tracking-[0.2em] text-accent-hi md:mr-6" style={{ letterSpacing: "0.2em" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {l.label}
+                  <span className="menu-arrow ml-4 text-accent-hi" aria-hidden="true">→</span>
+                </>
+              );
+              return (
+                <span key={l.id} className="line-mask">
+                  <span className="mask-in" style={{ "--i": i } as React.CSSProperties}>
+                    {l.href ? (
+                      <Link href={l.href} onClick={close} className="menu-link inline-block py-1">{inner}</Link>
+                    ) : (
+                      <HashLink id={l.id} onClick={close} className="menu-link inline-block py-1">{inner}</HashLink>
+                    )}
+                  </span>
+                </span>
+              );
+            })}
+          </nav>
+
+          <div className="g-fade mt-auto grid gap-8 border-t border-line pt-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <div className="eyebrow mb-3">Get in touch</div>
+              <a href={`mailto:${COMPANY.email}`} className="link-u block w-fit text-[15px] text-ink">{COMPANY.email}</a>
+              <a href={`tel:${COMPANY.phone}`} className="link-u mt-1.5 block w-fit text-[15px] text-ink-2">{COMPANY.phone}</a>
+            </div>
+            <div>
+              <div className="eyebrow mb-3">Legal</div>
+              <a href="#" className="link-u block w-fit text-[15px] text-ink-2">Privacy Policy</a>
+              <a href="#" className="link-u mt-1.5 block w-fit text-[15px] text-ink-2">Terms of Service</a>
+            </div>
+            <div>
+              <div className="eyebrow mb-3">Follow</div>
+              <div className="flex gap-2">
+                {SOCIALS.map((s) => (
+                  <a key={s.name} href="#" aria-label={s.name}
+                    className="flex h-10 w-10 items-center justify-center rounded-full font-mono text-[10px] font-semibold uppercase text-ink-2 transition-colors duration-300 hover:bg-accent-hi hover:text-[var(--on-accent)]"
+                    style={{ boxShadow: "inset 0 0 0 1px var(--line-2)" }}>
+                    {s.short}
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div className="lg:text-right">
+              <div className="eyebrow mb-3 lg:justify-end">Studio</div>
+              <LiveClock className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-3" />
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

@@ -6,9 +6,9 @@
  * 10 gradient tiles sit at rotate(i*36deg) + translateY(-radius) around a
  * centered "See more work" heading link, then counter-rotate by -i*36deg
  * so each tile's own art stays upright in its slot. The whole ring spins
- * as the page scrolls (rotation is written to .ring-rotate-wrap every
- * frame, no CSS transition on that layer, so it tracks scroll 1:1 — Lenis,
- * mounted globally in LenisProvider, already gives window.scrollY its
+ * as the page scrolls (one scrubbed ScrollTrigger tween on
+ * .ring-rotate-wrap, active only while the section is on screen — Lenis,
+ * mounted globally in LenisProvider, already gives the scroll its
  * inertia). Hovering the heading shrinks the ring toward center via a
  * SEPARATE parent layer (.ring-scale-wrap, CSS-transitioned) so the
  * continuous scroll rotation and the discrete hover scale never fight
@@ -19,23 +19,30 @@
  * rest still use RING_ART gradients.
  */
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import AutoVideo from "./AutoVideo";
 
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 const RING_COUNT = 10;
-const RING_SPEED = 0.06; // deg rotated per px scrolled
+const RING_TURN = 150; // degrees turned while the section crosses the viewport
 
 const RING_ART = [
   "linear-gradient(160deg, #cdeeff, var(--brand-light) 55%, var(--brand-deep))",
-  "linear-gradient(160deg, var(--grey), #3a332e)",
-  "radial-gradient(120% 120% at 30% 20%, #ffffff, var(--grey) 60%, var(--ink))",
-  "linear-gradient(160deg, var(--ink), #3a332e)",
+  "linear-gradient(160deg, #2a3446, var(--panel))",
+  "radial-gradient(120% 120% at 30% 20%, #ffffff, var(--grey) 60%, var(--panel))",
+  "linear-gradient(160deg, var(--panel-2), #1d2a3f)",
   "linear-gradient(160deg, var(--brand-light), var(--brand-deep))",
-  "radial-gradient(120% 120% at 70% 20%, #ffffff, var(--low) 55%, var(--grey))",
-  "linear-gradient(160deg, #ffffff, var(--bg-d))",
-  "linear-gradient(160deg, #3a332e, var(--ink))",
-  "radial-gradient(120% 120% at 30% 80%, var(--brand-sky), var(--brand-mid) 60%, var(--ink))",
-  "linear-gradient(160deg, var(--grey), var(--ink))",
+  "radial-gradient(120% 120% at 70% 20%, #ffffff, #9fb4c9 55%, var(--grey))",
+  "linear-gradient(160deg, var(--brand-sky), var(--brand-mid))",
+  "linear-gradient(160deg, #1d2a3f, var(--panel))",
+  "radial-gradient(120% 120% at 30% 80%, var(--brand-sky), var(--brand-mid) 60%, var(--panel))",
+  "linear-gradient(160deg, var(--grey), var(--panel-2))",
 ];
 
 const RING_VIDEO = { src: "/bidyaloy/bidyaloy.mp4", poster: "/bidyaloy/bidyaloy-poster.jpg" };
@@ -74,8 +81,7 @@ export default function WorkRing() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [hovered, setHovered] = useState(false);
   const rotateRef = useRef<HTMLDivElement>(null);
-  const scrollYRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -89,50 +95,53 @@ export default function WorkRing() {
 
   useEffect(() => {
     if (useSimple) return;
-    const onScroll = () => { scrollYRef.current = window.scrollY; };
-    const tick = () => {
-      const el = rotateRef.current;
-      if (el) el.style.transform = `rotate(${scrollYRef.current * RING_SPEED}deg)`;
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    const el = rotateRef.current;
+    const section = sectionRef.current;
+    if (!el || !section) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(el, { rotation: -RING_TURN / 2 }, {
+        rotation: RING_TURN / 2,
+        ease: "none",
+        scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: true },
+      });
+    });
+    return () => ctx.revert();
   }, [useSimple]);
 
   if (useSimple) {
     return (
-      <section data-theme="dark" className="relative overflow-hidden py-24 text-center" style={{ background: "var(--ink)" }}>
-        <a href="#work" className="font-display font-black leading-[0.85] tracking-tight" style={{ fontSize: "clamp(3rem, 11vw, 4.5rem)", color: "var(--grey)" }}>
+      <section className="relative overflow-hidden border-t border-line py-24 text-center" style={{ background: "var(--bg-soft)" }}>
+        <Link href="/work" className="display" style={{ fontSize: "clamp(3rem, 11vw, 4.5rem)", color: "var(--ink)" }}>
           See more<br />work
-        </a>
+        </Link>
         <StaticRingGrid />
       </section>
     );
   }
 
   return (
-    <section data-theme="dark" className="relative" style={{ minHeight: "100vh", background: "var(--ink)", overflow: "visible" }}>
+    <section ref={sectionRef} className="relative border-t border-line" style={{ minHeight: "100vh", background: "var(--bg-soft)" }}>
       <div className="relative flex h-screen w-full items-center justify-center overflow-hidden">
-        <a
-          href="#work"
-          className="relative z-10 select-none text-center font-display font-black leading-[0.8] tracking-tight"
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true" style={{ background: "radial-gradient(45% 45% at 50% 50%, rgba(10,144,216,0.22), transparent 70%)" }} />
+        <Link
+          href="/work"
+          data-cursor="All work"
+          className="display relative z-10 select-none text-center"
           style={{
-            fontSize: "clamp(3.2rem, 9.5vw, 5.75rem)",
-            color: hovered ? "var(--bg)" : "var(--grey)",
+            fontSize: "clamp(3.2rem, 9.5vw, 6.25rem)",
+            lineHeight: 0.84,
+            color: hovered ? "var(--ink)" : "var(--grey)",
             transition: "color 0.64s var(--ease-flyout)",
           }}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
+          onFocus={() => setHovered(true)}
+          onBlur={() => setHovered(false)}
         >
           See more<br />work
-        </a>
+        </Link>
 
-        <div className="ring-scale-wrap" style={{ transform: hovered ? "scale(0.8)" : "scale(1)" }} aria-hidden="true">
+        <div className="ring-scale-wrap" style={{ transform: hovered ? "scale(0.82)" : "scale(1)" }} aria-hidden="true">
           <div ref={rotateRef} className="ring-rotate-wrap">
             {Array.from({ length: RING_COUNT }, (_, i) => (
               <RingCard key={i} index={i} />

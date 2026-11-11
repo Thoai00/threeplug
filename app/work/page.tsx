@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteChrome from "../SiteChrome";
+import SiteFooter from "../SiteFooter";
+import Magnetic from "../fx/Magnetic";
+import PageTransition from "../fx/PageTransition";
+import { ArrowUpRight } from "../fx/icons";
 import { WorkGrid } from "./Cards";
 import { Reveal, RevealWords } from "./Motion";
 import { CASES } from "./cases";
@@ -20,80 +23,94 @@ export const metadata: Metadata = {
   },
 };
 
-const HAIRLINE = "rgba(20,18,16,0.1)";
-
 export default function WorkIndexPage() {
   return (
-    <main className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: "Work — Three Plug case studies",
-            url: `${SITE_URL}/work`,
-            hasPart: CASES.map((c) => ({
-              "@type": "CreativeWork",
-              name: c.name,
-              url: `${SITE_URL}/work/${c.slug}`,
-              about: c.industry,
-              description: c.tagline,
-            })),
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Work", path: "/work" }])) }}
-      />
-      <SiteChrome />
-
-      <section className="px-6 pb-4 pt-28 text-center md:pt-44">
-        <Reveal y={12}>
-          <nav className="font-mono text-xs" style={{ color: "rgba(20,18,16,0.4)" }} aria-label="Breadcrumb">
-            <Link href="/" className="transition-colors hover:text-[var(--ink)]">Home</Link>
-            <span className="mx-3">›</span>
-            <span style={{ color: "rgba(20,18,16,0.7)" }}>Work</span>
-          </nav>
-        </Reveal>
-
-        <RevealWords
-          as="h1"
-          by="char"
-          text="Work"
-          stagger={0.06}
-          delay={0.1}
-          className="mt-6 font-display font-black leading-[0.9] tracking-tight"
-          style={{ fontSize: "clamp(4.2rem, 17vw, 11rem)" }}
+    <PageTransition>
+      <div className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "CollectionPage",
+              name: "Work — Three Plug case studies",
+              url: `${SITE_URL}/work`,
+              hasPart: CASES.map((c) => ({
+                "@type": "CreativeWork",
+                name: c.name,
+                url: `${SITE_URL}/work/${c.slug}`,
+                about: c.industry,
+                description: c.tagline,
+              })),
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Work", path: "/work" }])) }}
         />
 
-        <Reveal delay={0.5}>
-          <p className="mx-auto mt-7 max-w-lg text-[17px] leading-relaxed md:text-base" style={{ color: "rgba(20,18,16,0.5)" }}>
-            {CASES.length} builds — platforms, apps, ERP and CRM systems, automation and AI agents. Every one of them opens into the full case.
-          </p>
-        </Reveal>
-      </section>
+        <main id="main">
+          <section className="relative overflow-hidden pb-6 pt-36 md:pt-48">
+            <div className="hero-bg" aria-hidden="true" />
+            <div className="hero-grid" aria-hidden="true" />
+            <div className="shell relative">
+              <Reveal y={12}>
+                <nav className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-3" aria-label="Breadcrumb">
+                  <Link href="/" className="link-u transition-colors hover:text-ink">Home</Link>
+                  <span className="mx-3">›</span>
+                  <span className="text-ink-2">Work</span>
+                </nav>
+              </Reveal>
 
-      <div className="mx-auto max-w-7xl px-6 pb-12 pt-10 md:pb-16 md:pt-14 md:pl-32">
-        <WorkGrid />
+              <div className="mt-8 grid gap-8 md:grid-cols-12 md:items-end">
+                <RevealWords
+                  as="h1"
+                  by="char"
+                  text="Work"
+                  stagger={0.06}
+                  delay={0.1}
+                  className="display md:col-span-7"
+                  style={{ fontSize: "clamp(5rem, 21vw, 17rem)", lineHeight: 0.8 }}
+                />
+                <Reveal delay={0.5} className="md:col-span-4 md:col-start-9 md:pb-4">
+                  <div className="eyebrow mb-4"><b>{String(CASES.length).padStart(2, "0")}</b><i />Case studies</div>
+                  <p className="t-lead">
+                    {CASES.length} builds — platforms, apps, ERP and CRM systems, automation and AI agents. Every one of them opens into the full case.
+                  </p>
+                </Reveal>
+              </div>
+            </div>
+          </section>
+
+          <div className="shell pb-16 pt-12 md:pb-24 md:pt-20">
+            <WorkGrid />
+          </div>
+
+          <section className="section border-t border-line text-center">
+            <div className="shell">
+              <RevealWords
+                text="Have a project like this?"
+                className="display mx-auto max-w-5xl"
+                style={{ fontSize: "clamp(3rem, 9vw, 7.5rem)" }}
+              />
+              <Reveal delay={0.3} className="mt-12 flex flex-wrap items-center justify-center gap-3">
+                <Magnetic>
+                  <Link href="/#contact" className="btn btn-accent">
+                    Book a call
+                    <ArrowUpRight />
+                  </Link>
+                </Magnetic>
+                <Magnetic>
+                  <Link href="/" className="btn btn-ghost">← Back home</Link>
+                </Magnetic>
+              </Reveal>
+            </div>
+          </section>
+        </main>
+
+        <SiteFooter />
       </div>
-
-      <section className="border-t px-6 py-16 text-center md:py-28 md:pl-32" style={{ borderColor: HAIRLINE }}>
-        <RevealWords
-          text="Have a project like this?"
-          className="mx-auto max-w-4xl font-display font-black leading-[0.95] tracking-tight"
-          style={{ fontSize: "clamp(3rem, 9vw, 6rem)" }}
-        />
-        <Reveal delay={0.3} className="mt-12 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/#contact" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-transform hover:scale-105" style={{ background: "var(--ink)", color: "var(--bg)" }}>
-            Book a call
-          </Link>
-          <Link href="/" className="rounded-full px-7 py-4 text-sm font-bold uppercase tracking-wide transition-colors hover:bg-black/5" style={{ border: "1px solid rgba(20,18,16,0.25)" }}>
-            ← Back home
-          </Link>
-        </Reveal>
-      </section>
-    </main>
+    </PageTransition>
   );
 }
